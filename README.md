@@ -51,8 +51,8 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .setup-spec-kit.ps1
 ### 4. Generate Specification and Tasks
 ```bash
 # Start the spec-kit workflow
-# In VS Code: use the Copilot Chat with `/specify` command
-# Or run directly: npx spec-kit specify
+# In VS Code: use Copilot Chat with `/speckit.specify`
+# (CLI currently provides initialization command only: `npx spec-kit init`)
 
 # The workflow will:
 # ✓ Generate specification from requirements
@@ -120,19 +120,19 @@ your-repo/
 
 ## Documentation
 
-- **[Azure DevOps Setup](./AZURE_DEVOPS_SETUP.md)** - Complete guide for connecting to Azure DevOps
+- **[Azure DevOps Setup](./.specify/docs/AZURE_DEVOPS_SETUP.md)** - Complete guide for connecting to Azure DevOps
   - PAT token generation
   - Organization and project configuration
   - WIQL query customization
   - Troubleshooting
 
-- **[GitFlow Workflow](./GITFLOW_SETUP.md)** - Git branch management with PBI integration
+- **[GitFlow Workflow](./.specify/docs/GITFLOW_SETUP.md)** - Git branch management with PBI integration
   - Branch naming conventions
   - Creating features from PBIs
   - Release and hotfix procedures
   - CI/CD automation patterns
 
-- **[NPM Account Setup](./docs/NPM_ACCOUNT_SETUP.md)** - Setting up NPM publishing
+- **[NPM Account Setup](./.specify/docs/NPM_ACCOUNT_SETUP.md)** - Setting up NPM publishing
   - Creating NPM accounts and scopes
   - Generating authentication tokens
   - Configuring GitHub secrets
@@ -191,7 +191,7 @@ export ADO_PAT_TOKEN="your-pat-token-here"
 ### "Version mismatch" error during NPM publish
 - Ensure package.json version matches the git tag (v0.5.0 → "0.5.0")
 - Commit and push before creating the tag
-- See [NPM Account Setup](./docs/NPM_ACCOUNT_SETUP.md#troubleshooting)
+- See [NPM Account Setup](./.specify/docs/NPM_ACCOUNT_SETUP.md#troubleshooting)
 
 ### "ExecutionPolicy" error in PowerShell
 ```powershell

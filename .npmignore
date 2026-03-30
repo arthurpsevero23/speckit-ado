@@ -12,6 +12,7 @@ SKILL.md
 
 # Workspace-specific files
 specs/
+.specify/context/
 .specify/init-options.json
 .specify/memory/
 .specify/scripts/setup-ado.ps1
