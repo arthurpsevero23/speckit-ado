@@ -90,8 +90,11 @@ $files = @(
     ".\.specify\scripts\setup-ado.ps1",
     ".\.specify\scripts\powershell\select-pbi-for-specify.ps1",
     ".\.specify\scripts\powershell\create-pbi-for-specify.ps1",
+    ".\.specify\scripts\powershell\deep-test-ado-workflow.ps1",
     ".\.github\agents\speckit.create-pbi.agent.md",
-    ".\.github\prompts\speckit.create-pbi.prompt.md"
+    ".\.github\prompts\speckit.create-pbi.prompt.md",
+    ".\.specify\docs\WORKFLOW_GUIDE.md",
+    ".\.specify\docs\POWERSHELL_SCRIPTS.md"
 )
 
 $allOk = $true

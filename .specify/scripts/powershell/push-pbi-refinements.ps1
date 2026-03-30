@@ -317,7 +317,7 @@ if ($fieldsToUpdate.Count -eq 0) {
 if ($DryRun) {
     if (-not $Json) {
         Write-Host ""
-        Write-Host "DRY RUN — no changes will be made" -ForegroundColor Yellow
+        Write-Host "DRY RUN - no changes will be made" -ForegroundColor Yellow
         Write-Host ("PBI: AB#{0}" -f $pbiId) -ForegroundColor Cyan
         Write-Host ("Fields to update: {0}" -f ($fieldsToUpdate -join ', ')) -ForegroundColor Cyan
         Write-Host ""

@@ -10,8 +10,8 @@
   "speckit_version": "0.5.0",
   "ado": {
     "enabled": true,
-    "organization": "arthurpsevero23",
-    "projectName": "arthur-severo",
+    "organization": "your-organization",
+    "projectName": "your-project",
     "patTokenEnvVar": "ADO_PAT_TOKEN",
     "filterByState": ["Active", "Committed"],
     "filterByIteration": "",

@@ -180,6 +180,48 @@ This script supports:
 After selection, the script writes context to `.specify/context/selected-pbi.json`.
 Then run `/speckit.specify` as usual and the selected PBI metadata is included in the generated specification.
 
+### Step 7: Create a New Backlog Item from the Spec
+
+If you already have a specification draft and want to create a new item in Azure DevOps:
+
+```powershell
+# Preview only
+.specify/scripts/powershell/create-pbi-for-specify.ps1 -DryRun -Json
+
+# Create a new item
+.specify/scripts/powershell/create-pbi-for-specify.ps1 `
+  -Title "Authentication hardening" `
+  -Description "Create authentication backlog item from spec context" `
+  -AcceptanceCriteria "Definition of done captured in spec" `
+  -Tags "security;spec-kit" `
+  -Priority 2 `
+  -State "To Do" `
+  -Json
+```
+
+This writes context to `.specify/context/created-pbi.json` and returns the created ADO URL.
+
+### Step 8: Push Refined Fields Back to Azure DevOps
+
+When the linked work item section in `spec.md` is refined, sync it back to the selected ADO item:
+
+```powershell
+# Preview what will be pushed
+.specify/scripts/powershell/push-pbi-refinements.ps1 -DryRun -Json
+
+# Push the changes
+.specify/scripts/powershell/push-pbi-refinements.ps1 -Json
+```
+
+The script updates non-placeholder values for:
+
+- Description
+- Acceptance Criteria
+- Tags
+- Story Points / Estimate
+
+It also posts a comment to the work item documenting the refinement event.
+
 ---
 
 ## Configuration Examples

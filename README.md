@@ -19,8 +19,8 @@ yarn add @arthurpsevero23/spec-kit
 
 ### 1. First Time Setup
 ```bash
-# Copy the setup script to your repo
-cp node_modules/@arthurpsevero23/spec-kit/.setup-spec-kit.ps1 .
+# Initialize the template files in your repo
+npx spec-kit init
 
 # Run the setup wizard (PowerShell required)
 pwsh -NoProfile -ExecutionPolicy Bypass -File .setup-spec-kit.ps1
@@ -61,6 +61,34 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .setup-spec-kit.ps1
 # ✓ Enrich tasks with Azure DevOps PBI IDs
 # ✓ Output tasks in your tasks.md with [AB#1234] format
 ```
+
+## Workflow Architecture
+
+The package has two entry surfaces:
+
+- CLI for repository initialization: `spec-kit init`
+- Copilot agents for the authoring workflow inside VS Code
+
+Recommended flow:
+
+1. `npx spec-kit init`
+2. Run `./.specify/scripts/setup-ado.ps1`
+3. Start with `/speckit.specify`
+4. Optionally use `/speckit.pickup-task` to attach an existing ADO item first
+5. Continue with `/speckit.clarify`, `/speckit.plan`, and `/speckit.tasks`
+6. Use `/speckit.push-refinements` to sync refined fields back to Azure DevOps
+
+Primary agents:
+
+| Agent | When to use it |
+|---|---|
+| `/speckit.specify` | Start or update a feature specification |
+| `/speckit.pickup-task` | Select an existing backlog item from Azure DevOps |
+| `/speckit.create-pbi` | Create a new backlog item from the current spec |
+| `/speckit.clarify` | Resolve ambiguous requirements before planning |
+| `/speckit.plan` | Produce implementation plan artifacts |
+| `/speckit.tasks` | Generate actionable implementation tasks |
+| `/speckit.push-refinements` | Push refined fields back to Azure DevOps |
 
 ## Features
 
@@ -109,8 +137,8 @@ your-repo/
 │       ├── AZURE_DEVOPS_SETUP.md
 │       ├── GITFLOW_SETUP.md
 │       └── NPM_ACCOUNT_SETUP.md
-├── features/
-│   └── feature-branch-name/     # Created by create-feature-from-pbi.ps1
+├── specs/
+│   └── 001-feature-name/        # Created by create-new-feature/create-feature-from-pbi.ps1
 │       ├── spec.md
 │       ├── plan.md
 │       └── tasks.md             # Generated with [AB#XXXX] task IDs
@@ -125,6 +153,16 @@ your-repo/
   - Organization and project configuration
   - WIQL query customization
   - Troubleshooting
+
+- **[Workflow Guide](./.specify/docs/WORKFLOW_GUIDE.md)** - Agent entry points, handoffs, and recommended execution path
+  - Which agent to start with
+  - How ADO context flows between steps
+  - When to create, pick up, or push backlog items
+
+- **[PowerShell Scripts Reference](./.specify/docs/POWERSHELL_SCRIPTS.md)** - Parameters and examples for packaged scripts
+  - Setup and validation scripts
+  - ADO create/select/push commands
+  - Deep test command for end-to-end validation
 
 - **[GitFlow Workflow](./.specify/docs/GITFLOW_SETUP.md)** - Git branch management with PBI integration
   - Branch naming conventions
@@ -197,6 +235,18 @@ export ADO_PAT_TOKEN="your-pat-token-here"
 ```powershell
 # Run PowerShell with bypass policy
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\script.ps1
+```
+
+### Validate Your Installation
+```powershell
+# Package-level smoke test
+npm test
+
+# Core script validation
+.\.specify\scripts\powershell\test-functionality.ps1
+
+# Deeper ADO workflow validation
+.\.specify\scripts\powershell\deep-test-ado-workflow.ps1 -DryRunOnly
 ```
 
 ## Configuration Examples
