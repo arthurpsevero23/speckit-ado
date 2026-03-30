@@ -4,6 +4,9 @@ handoffs:
   - label: Pickup Task
     agent: speckit.pickup-task
     prompt: Pick a backlog PBI and prepare context for /speckit.specify
+  - label: Validate Install
+    agent: speckit.validate-install
+    prompt: Validate this repository installation and onboarding setup
   - label: Create PBI in ADO
     agent: speckit.create-pbi
     prompt: Create a backlog PBI from this specification

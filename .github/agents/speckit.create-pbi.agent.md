@@ -1,6 +1,9 @@
 ---
 description: Create a backlog PBI in Azure DevOps from the current specification with optional field overrides.
 handoffs:
+  - label: Validate Install
+    agent: speckit.validate-install
+    prompt: Validate this repository installation and onboarding setup
   - label: Run Specify
     agent: speckit.specify
     prompt: Generate or update the specification from this feature context

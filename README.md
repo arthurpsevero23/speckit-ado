@@ -247,6 +247,9 @@ npm test
 
 # Deeper ADO workflow validation
 .\.specify\scripts\powershell\deep-test-ado-workflow.ps1 -DryRunOnly
+
+# Consumer-project installation validation
+.\.specify\scripts\powershell\validate-consumer-install.ps1
 ```
 
 ## Configuration Examples

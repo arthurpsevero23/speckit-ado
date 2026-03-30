@@ -1,6 +1,9 @@
 ---
 description: Help the user pick a backlog PBI (by ID or filters) and prepare context for /speckit.specify.
 handoffs:
+  - label: Validate Install
+    agent: speckit.validate-install
+    prompt: Validate this repository installation and onboarding setup
   - label: Run Specify
     agent: speckit.specify
     prompt: Generate a feature specification from the selected PBI context

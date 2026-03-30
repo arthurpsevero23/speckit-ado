@@ -10,6 +10,7 @@ This package ships PowerShell scripts for Azure DevOps setup, workflow automatio
 | `.specify/scripts/powershell/check-prerequisites.ps1` | Validate current feature/branch context | `./.specify/scripts/powershell/check-prerequisites.ps1 -Json` |
 | `.specify/scripts/powershell/test-functionality.ps1` | Validate packaged files and module basics | `./.specify/scripts/powershell/test-functionality.ps1` |
 | `.specify/scripts/powershell/deep-test-ado-workflow.ps1` | Deeper workflow validation across create/select/push flows | `./.specify/scripts/powershell/deep-test-ado-workflow.ps1 -DryRunOnly` |
+| `.specify/scripts/powershell/validate-consumer-install.ps1` | Validate installation from a consumer project after `npm install` and `npx spec-kit init` | `./.specify/scripts/powershell/validate-consumer-install.ps1` |
 
 ## ADO Backlog Operations
 
@@ -49,4 +50,5 @@ This package ships PowerShell scripts for Azure DevOps setup, workflow automatio
 npm test
 .\.specify\scripts\powershell\test-functionality.ps1
 .\.specify\scripts\powershell\deep-test-ado-workflow.ps1 -DryRunOnly
+.\.specify\scripts\powershell\validate-consumer-install.ps1
 ```
