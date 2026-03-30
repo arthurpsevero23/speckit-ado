@@ -56,7 +56,7 @@ Write-Host "[4/5] Creating local configuration template..." -ForegroundColor Yel
 
 $localConfigContent = @'
 {
-  "speckit_version": "0.5.0",
+  "speckit_version": "0.5.1",
   "stages": {
     "specify": {
       "engine": "claude",

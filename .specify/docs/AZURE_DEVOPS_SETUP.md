@@ -74,7 +74,7 @@ Edit `.specify/init-options.json`:
 {
   "ai": "copilot",
   "branch_numbering": "sequential",
-  "speckit_version": "0.5.0",
+  "speckit_version": "0.5.1",
   "ado": {
     "enabled": true,
     "organization": "myorg",

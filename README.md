@@ -227,7 +227,7 @@ export ADO_PAT_TOKEN="your-pat-token-here"
 - Verify organization and project names in init-options.json
 
 ### "Version mismatch" error during NPM publish
-- Ensure package.json version matches the git tag (v0.5.0 → "0.5.0")
+- Ensure package.json version matches the git tag (v0.5.1 -> "0.5.1")
 - Commit and push before creating the tag
 - See [NPM Account Setup](./.specify/docs/NPM_ACCOUNT_SETUP.md#troubleshooting)
 
@@ -281,10 +281,10 @@ npm test
 ## Versioning
 
 - **spec-kit**: Follows semantic versioning (MAJOR.MINOR.PATCH)
-- **Git Tags**: Format `v0.5.0` triggers automated NPM publication
+- **Git Tags**: Format `v0.5.1` triggers automated NPM publication
 - **NPM Package**: Published as `@arthurpsevero23/spec-kit`
 
-Current Version: **0.5.0**
+Current Version: **0.5.1**
 
 ## Publishing Updates
 
@@ -378,5 +378,5 @@ MIT - See LICENSE file for details
 ---
 
 **Last Updated**: March 2026  
-**Current Version**: 0.5.0  
+**Current Version**: 0.5.1  
 **Status**: Active Development ✓
