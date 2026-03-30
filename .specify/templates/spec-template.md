@@ -5,6 +5,25 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
+## Linked Work Item *(optional)*
+
+- **PBI Task ID**: [AB#XXXX]
+- **PBI Numeric ID**: [ID]
+- **Title**: [PBI title]
+- **State**: [PBI state]
+- **Assigned To**: [Assignee name]
+- **Iteration/Sprint**: [Iteration path]
+- **Tags**: [Tag list]
+- **Story Points / Estimate**: [Numeric estimate]
+
+### PBI Description
+
+[Description captured from Azure DevOps]
+
+### PBI Acceptance Criteria
+
+[Acceptance criteria captured from Azure DevOps]
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--

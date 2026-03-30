@@ -1,0 +1,38 @@
+# Development files
+.git
+.gitignore
+.github/
+.vscode/
+*.code-workspace
+.instructions.md
+.prompt.md
+.agent.md
+AGENT.md
+SKILL.md
+
+# Workspace-specific files
+specs/
+.specify/init-options.json
+.specify/memory/
+.specify/scripts/setup-ado.ps1
+.specify/scripts/powershell/create-feature-from-pbi.ps1
+
+# Logs and outputs
+*.log
+ado-task-mapping.log
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Tests and CI
+test/
+tests/
+.nycrc
+.nyc_output/
+coverage/
+
+# Documentation sources
+ARCHITECTURE.md
+CONTRIBUTING.md

@@ -1,0 +1,48 @@
+{
+  "name": "@arthurpsevero23/spec-kit",
+  "version": "0.5.0",
+  "description": "AI-driven specification to task breakdown framework with Azure DevOps PBI integration and GitFlow branching support",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No tests configured yet\"",
+    "prepublishOnly": "echo \"Publishing @arthurpsevero23/spec-kit v$(node -e \\\"console.log(require('./package.json').version)\\\")\" && npm run lint",
+    "lint": "echo \"Lint configuration coming soon\""
+  },
+  "files": [
+    ".specify/",
+    "AZURE_DEVOPS_SETUP.md",
+    "GITFLOW_SETUP.md",
+    "index.js",
+    "README.md"
+  ],
+  "keywords": [
+    "spec-kit",
+    "specification",
+    "task-generation",
+    "azure-devops",
+    "pbi",
+    "work-items",
+    "gitflow",
+    "branching",
+    "ai-driven",
+    "workflow"
+  ],
+  "author": "Arthur Severo <arthurpsevero@example.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arthurpsevero23/spec-kit-poc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/arthurpsevero23/spec-kit-poc/issues"
+  },
+  "homepage": "https://github.com/arthurpsevero23/spec-kit-poc#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

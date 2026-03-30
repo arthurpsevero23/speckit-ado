@@ -1,0 +1,16 @@
+version: "1.0"
+description: "Spec-Kit extensions and hooks"
+
+extensions:
+  - name: "azure-devops-task-enrichment"
+    description: "Enrich generated tasks with Azure DevOps PBI IDs"
+    type: "hook"
+    trigger: "after_tasks"
+    enabled: true
+    optional: true
+    condition: "ado.enabled == true"
+    script: ".specify/hooks/after_tasks.ps1"
+    parameters:
+      FeaturePath: "$FEATURE_PATH"
+      SpecKitRoot: "$SPECKIT_ROOT"
+    documentation: ".specify/docs/AZURE_DEVOPS_SETUP.md"

@@ -1,0 +1,32 @@
+{
+  "ai": "copilot",
+  "ai_commands_dir": null,
+  "ai_skills": false,
+  "branch_numbering": "sequential",
+  "here": true,
+  "offline": false,
+  "preset": null,
+  "script": "ps",
+  "speckit_version": "0.5.0",
+  "ado": {
+    "enabled": true,
+    "organization": "arthurpsevero23",
+    "projectName": "arthur-severo",
+    "patTokenEnvVar": "ADO_PAT_TOKEN",
+    "filterByState": ["Active", "Committed"],
+    "filterByIteration": "",
+    "specifySelection": {
+      "enabled": true,
+      "defaultTop": 50,
+      "persistContextPath": ".specify/context/selected-pbi.json"
+    },
+    "creation": {
+      "enabled": true,
+      "workItemType": "Issue",
+      "defaultState": "New",
+      "defaultPriority": 3,
+      "defaultTags": ["spec-kit-generated"],
+      "persistContextPath": ".specify/context/created-pbi.json"
+    }
+  }
+}
