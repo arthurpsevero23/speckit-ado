@@ -1,26 +1,8 @@
 /**
  * @arthurpsevero23/spec-kit
- * 
- * AI-driven specification to task breakdown framework with Azure DevOps PBI integration.
- * 
- * This package provides:
- * - PowerShell modules for Azure DevOps integration
- * - GitFlow-aware branching scripts
- * - Task enrichment hooks for spec-kit workflow
- * - Interactive configuration wizards
- * 
- * Installation:
- *   npm install @arthurpsevero23/spec-kit
- * 
- * Setup:
- *   Copy .specify/ folder to your project root
- *   Configure .specify/init-options.json with your Azure DevOps details
- *   Run .specify/scripts/setup-ado.ps1 for interactive setup
- * 
- * Documentation:
- *   - AZURE_DEVOPS_SETUP.md - Azure DevOps integration guide
- *   - GITFLOW_SETUP.md - GitFlow workflow documentation
- *   - README.md - Project overview
+ *
+ * Azure DevOps extension for the spec-kit AI framework.
+ * This package is a CLI tool — use `npx spec-kit init` to set up your project.
  */
 
 import { readFileSync } from 'node:fs';
@@ -28,25 +10,7 @@ import { readFileSync } from 'node:fs';
 const _pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 export const VERSION = _pkg.version;
-
-export const PACKAGE_INFO = {
-  name: _pkg.name,
-  version: VERSION,
-  description:
-    "AI-driven specification to task breakdown framework with Azure DevOps PBI integration",
-  author: "Arthur Severo",
-  license: "MIT"
-};
-
-export const INSTALLATION_NOTES = {
-  folder: ".specify",
-  configFile: ".specify/init-options.json",
-  setupScript: ".specify/scripts/setup-ado.ps1",
-  documentation: {
-    azureDevOps: "AZURE_DEVOPS_SETUP.md",
-    gitflow: "GITFLOW_SETUP.md"
-  }
-};
+export const PACKAGE_NAME = _pkg.name;
 
 /**
  * Get package information

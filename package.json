@@ -1,6 +1,6 @@
 {
   "name": "@arthurpsevero23/spec-kit",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "AI-driven specification to task breakdown framework with Azure DevOps PBI integration and GitFlow branching support",
   "main": "index.js",
   "exports": {
@@ -24,7 +24,10 @@
     ".specify/templates/",
     ".specify/extensions.yml",
     ".specify/init-options.json",
+    ".github/agents/",
+    ".github/prompts/",
     ".setup-spec-kit.ps1",
+    ".vscode/settings.json",
     "bin/",
     "index.js",
     "README.md"

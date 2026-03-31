@@ -160,5 +160,5 @@ Write-Host ""
 Write-Host "Documentation:" -ForegroundColor Cyan
 Write-Host "  - Azure DevOps Setup: node_modules/@arthurpsevero23/spec-kit/.specify/docs/AZURE_DEVOPS_SETUP.md" -ForegroundColor Gray
 Write-Host "  - GitFlow Workflow: node_modules/@arthurpsevero23/spec-kit/.specify/docs/GITFLOW_SETUP.md" -ForegroundColor Gray
-Write-Host "  - NPM Account Setup: node_modules/@arthurpsevero23/spec-kit/.specify/docs/NPM_ACCOUNT_SETUP.md" -ForegroundColor Gray
+
 Write-Host ""

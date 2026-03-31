@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, cpSync, readFileSync } from "node:fs";
+import { existsSync, cpSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,7 +17,7 @@ function printHelp() {
   console.log("  spec-kit --version");
   console.log("");
   console.log("Commands:");
-  console.log("  init      Copy .specify template folder to current directory");
+  console.log("  init      Initialize spec-kit in current directory (copies .specify, agents, and prompts)");
 }
 
 function printVersion() {
@@ -30,11 +30,25 @@ function printVersion() {
   }
 }
 
-function copySpecifyTemplate() {
+/**
+ * Copy a directory from the package, always overwriting (framework-owned files).
+ */
+function copyFrameworkDir(name, source, target) {
+  if (!existsSync(source)) {
+    console.log(`  ⚠ Source ${name} not found in package. Skipping.`);
+    return;
+  }
+  mkdirSync(target, { recursive: true });
+  cpSync(source, target, { recursive: true, force: true });
+  console.log(`  ✔ ${name} copied (overwrites framework-owned files).`);
+}
+
+function initProject() {
+  const cwd = process.cwd();
+
+  // --- .specify ---
   const sourceSpecify = join(packageRoot, ".specify");
-  const sourceSetup = join(packageRoot, ".setup-spec-kit.ps1");
-  const targetSpecify = join(process.cwd(), ".specify");
-  const targetSetup = join(process.cwd(), ".setup-spec-kit.ps1");
+  const targetSpecify = join(cwd, ".specify");
 
   if (!existsSync(sourceSpecify)) {
     console.error("Template .specify folder not found in package.");
@@ -43,19 +57,75 @@ function copySpecifyTemplate() {
 
   if (!existsSync(targetSpecify)) {
     cpSync(sourceSpecify, targetSpecify, { recursive: true });
-    console.log("Created .specify from package template.");
+    console.log("  ✔ .specify created from package template.");
   } else {
-    console.log(".specify already exists. Skipping template copy.");
+    // Overwrite framework-owned subdirs, skip user config
+    const frameworkDirs = ["docs", "hooks", "modules", "scripts", "templates"];
+    for (const dir of frameworkDirs) {
+      const src = join(sourceSpecify, dir);
+      const dest = join(targetSpecify, dir);
+      if (existsSync(src)) {
+        cpSync(src, dest, { recursive: true, force: true });
+      }
+    }
+    // Overwrite framework-owned root files
+    for (const file of ["extensions.yml"]) {
+      const src = join(sourceSpecify, file);
+      const dest = join(targetSpecify, file);
+      if (existsSync(src)) {
+        cpSync(src, dest, { force: true });
+      }
+    }
+    // Skip init-options.json if it already exists (user config)
+    const initOptsSource = join(sourceSpecify, "init-options.json");
+    const initOptsTarget = join(targetSpecify, "init-options.json");
+    if (!existsSync(initOptsTarget) && existsSync(initOptsSource)) {
+      cpSync(initOptsSource, initOptsTarget);
+      console.log("  ✔ init-options.json created (default config).");
+    } else {
+      console.log("  ⏭ init-options.json already exists. Skipping (user config).");
+    }
+    console.log("  ✔ .specify framework files updated.");
   }
 
-  if (!existsSync(targetSetup) && existsSync(sourceSetup)) {
-    cpSync(sourceSetup, targetSetup);
-    console.log("Created .setup-spec-kit.ps1 in current directory.");
-  } else if (existsSync(targetSetup)) {
-    console.log(".setup-spec-kit.ps1 already exists. Skipping copy.");
+  // --- .setup-spec-kit.ps1 ---
+  const sourceSetup = join(packageRoot, ".setup-spec-kit.ps1");
+  const targetSetup = join(cwd, ".setup-spec-kit.ps1");
+  if (existsSync(sourceSetup)) {
+    cpSync(sourceSetup, targetSetup, { force: true });
+    console.log("  ✔ .setup-spec-kit.ps1 copied.");
   }
 
+  // --- .vscode/settings.json ---
+  const sourceVsSettings = join(packageRoot, ".vscode", "settings.json");
+  const targetVsDir = join(cwd, ".vscode");
+  const targetVsSettings = join(targetVsDir, "settings.json");
+  if (existsSync(sourceVsSettings)) {
+    if (!existsSync(targetVsSettings)) {
+      mkdirSync(targetVsDir, { recursive: true });
+      cpSync(sourceVsSettings, targetVsSettings);
+      console.log("  ✔ .vscode/settings.json created (default VS Code settings).");
+    } else {
+      console.log("  ⏭ .vscode/settings.json already exists. Skipping.");
+    }
+  }
+
+  // --- .github/agents ---
+  const sourceAgents = join(packageRoot, ".github", "agents");
+  const targetAgents = join(cwd, ".github", "agents");
+  copyFrameworkDir(".github/agents", sourceAgents, targetAgents);
+
+  // --- .github/prompts ---
+  const sourcePrompts = join(packageRoot, ".github", "prompts");
+  const targetPrompts = join(cwd, ".github", "prompts");
+  copyFrameworkDir(".github/prompts", sourcePrompts, targetPrompts);
+
+  console.log("");
   console.log("Initialization complete.");
+  console.log("Next steps:");
+  console.log("  1. Commit the new .specify/, .github/agents/, and .github/prompts/ folders");
+  console.log("  2. Run: pwsh -NoProfile -ExecutionPolicy Bypass -File .setup-spec-kit.ps1");
+  console.log("  3. Use /speckit.specify in VS Code Copilot Chat");
 }
 
 const arg = process.argv[2];
@@ -71,7 +141,7 @@ if (arg === "--version" || arg === "-v") {
 }
 
 if (arg === "init") {
-  copySpecifyTemplate();
+  initProject();
   process.exit(0);
 }
 

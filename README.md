@@ -78,17 +78,54 @@ Recommended flow:
 5. Continue with `/speckit.clarify`, `/speckit.plan`, and `/speckit.tasks`
 6. Use `/speckit.push-refinements` to sync refined fields back to Azure DevOps
 
-Primary agents:
+## Agents Reference
 
-| Agent | When to use it |
-|---|---|
-| `/speckit.specify` | Start or update a feature specification |
-| `/speckit.pickup-task` | Select an existing backlog item from Azure DevOps |
-| `/speckit.create-pbi` | Create a new backlog item from the current spec |
-| `/speckit.clarify` | Resolve ambiguous requirements before planning |
-| `/speckit.plan` | Produce implementation plan artifacts |
-| `/speckit.tasks` | Generate actionable implementation tasks |
-| `/speckit.push-refinements` | Push refined fields back to Azure DevOps |
+### Core Workflow Agents
+
+#### `/speckit.specify` — Create or Update Feature Specification
+The starting point for most workflows. Takes a natural language feature description and generates a structured specification document (`spec.md`) using the spec template. If `.specify/context/selected-pbi.json` exists (written by `/speckit.pickup-task`), it merges PBI metadata (ID, title, description, acceptance criteria, state, iteration, tags, story points) into the spec as traceability context. Supports extension hooks via `.specify/extensions.yml` (`before_specify`). Hands off to `/speckit.clarify`, `/speckit.plan`, `/speckit.create-pbi`, `/speckit.pickup-task`, or `/speckit.validate-install`.
+
+#### `/speckit.clarify` — Resolve Ambiguous Requirements
+Runs after `/speckit.specify` and before `/speckit.plan`. Performs a structured ambiguity and coverage scan across 9 categories (functional scope, domain/data model, interaction/UX, non-functional attributes, integrations, edge cases, constraints, terminology, completion signals). Marks each category as Clear / Partial / Missing, then asks up to 5 highly targeted clarification questions. Encodes answers directly back into the spec file. Hands off to `/speckit.plan` or `/speckit.push-refinements`.
+
+#### `/speckit.plan` — Generate Implementation Plan
+Takes the completed spec and generates design artifacts following the plan template. Fills technical context, runs a constitution check against `.specify/memory/constitution.md`, then produces Phase 0 (research.md for unknowns) and Phase 1 artifacts (data-model.md, contracts/, quickstart.md). Updates agent context via `update-agent-context.ps1`. Supports `before_plan` and `after_plan` extension hooks. Hands off to `/speckit.tasks` or `/speckit.checklist`.
+
+#### `/speckit.tasks` — Generate Implementation Tasks
+Reads plan.md, spec.md, and optional design artifacts (data-model.md, contracts/, research.md, quickstart.md) to generate a dependency-ordered `tasks.md`. Organizes tasks by user story priority: Phase 1 (setup), Phase 2 (foundational prerequisites), Phase 3+ (one phase per user story in priority order). Generates a dependency graph and parallel execution examples. Supports `before_tasks` and `after_tasks` extension hooks — the `after_tasks` hook enriches task IDs from `[T001]` to `[AB#1234]` format via ADO integration. Hands off to `/speckit.analyze` or `/speckit.implement`.
+
+#### `/speckit.implement` — Execute Implementation Plan
+Processes all tasks defined in `tasks.md` and executes them. Before starting, checks any checklists in the feature's `checklists/` directory — if any checklist items are incomplete, it stops and asks for confirmation before proceeding. Supports `before_implement` extension hooks. Reads the full task list and works through each task sequentially.
+
+### Azure DevOps Integration Agents
+
+#### `/speckit.pickup-task` — Select a Backlog PBI
+Fetches PBIs from Azure DevOps and lets you select one to use as context for `/speckit.specify`. Supports two modes: direct PBI ID fast path (`-PbiId 1234`) or interactive filter mode (by state, sprint, assigned to, text search). Writes the selected PBI to `.specify/context/selected-pbi.json` with all fields (ID, title, state, assigned to, iteration, tags, story points). Hands off to `/speckit.specify` or `/speckit.validate-install`.
+
+#### `/speckit.create-pbi` — Create a New ADO Work Item
+Creates a new PBI in Azure DevOps from the current specification. Uses a safe two-step workflow: first runs a dry-run preview showing title, state, iteration, priority, story points, and tags, then asks for explicit confirmation before creating. After creation, reports the PBI ID, title, and URL. Supports `-SetAsSelected` to immediately set the new PBI as context for `/speckit.specify`. Hands off to `/speckit.specify`, `/speckit.plan`, or `/speckit.validate-install`.
+
+#### `/speckit.push-refinements` — Sync Refined Fields Back to ADO
+Pushes refined specification fields back to the linked Azure DevOps work item. Runs a dry-run preview first showing which fields (description, acceptance criteria, tags, story points) will be updated, then asks for confirmation. After push, reports updated fields, whether a comment was posted to the work item, and a direct link. Only pushes fields that differ from template placeholder values — empty or default text is never written. Hands off to `/speckit.clarify` or `/speckit.plan`.
+
+### Quality & Validation Agents
+
+#### `/speckit.analyze` — Cross-Artifact Consistency Analysis
+Read-only analysis agent that runs after `/speckit.tasks`. Scans `spec.md`, `plan.md`, and `tasks.md` for inconsistencies, duplications, ambiguities, and underspecified items. Builds semantic models (requirements inventory, user story inventory, task coverage mapping, constitution rule set) and runs detection passes for duplication, coverage gaps, and constitution violations. Constitution conflicts are automatically CRITICAL severity. Outputs a structured report with up to 50 findings and an optional remediation plan (requires explicit approval before any edits).
+
+#### `/speckit.checklist` — Generate Domain-Specific Checklists
+Generates custom checklists that act as "unit tests for requirements writing" — they validate quality, clarity, and completeness of requirements, not implementation correctness. Asks up to 3 contextual clarifying questions (scope, risk, depth, audience, boundaries) derived from the feature domain, then generates checklist items like "Are visual hierarchy requirements defined for all card types?" or "Is 'prominent display' quantified with specific sizing?". Reads spec.md, plan.md, and tasks.md for context.
+
+#### `/speckit.validate-install` — Verify Repository Setup
+Runs `validate-consumer-install.ps1` to check that spec-kit was installed correctly in the consumer repository. Validates CLI availability, `.specify` initialization status, packaged file presence, smoke test results, deep test results, and ADO schema. If failures exist, recommends the next concrete step (`npx spec-kit init`, `setup-ado.ps1`, or reinstall). If all checks pass, suggests starting with `/speckit.specify`, `/speckit.pickup-task`, or `/speckit.create-pbi`. Hands off to `/speckit.specify` or `/speckit.create-pbi`.
+
+### Governance & Utility Agents
+
+#### `/speckit.constitution` — Manage Project Constitution
+Creates or updates the project constitution at `.specify/memory/constitution.md` from a template. Collects principle values interactively or from user input, fills all placeholder tokens, and increments the version using semantic versioning (MAJOR for principle removals/redefinitions, MINOR for additions, PATCH for clarifications). Propagates changes across dependent templates (plan-template.md, spec-template.md, tasks-template.md) and produces a sync impact report. Hands off to `/speckit.specify`.
+
+#### `/speckit.taskstoissues` — Convert Tasks to GitHub Issues
+Reads the generated `tasks.md` and creates GitHub Issues for each task using the GitHub MCP server. Extracts the Git remote URL and verifies it's a GitHub repository before proceeding. Will not create issues in repositories that don't match the remote URL. Requires the `github/github-mcp-server/issue_write` tool.
 
 ## Features
 
@@ -122,21 +159,71 @@ Built on the powerful spec-kit framework:
 
 ```
 your-repo/
-├── .specify/                    # Spec-kit root (from npm package or git submodule)
-│   ├── init-options.json        # Your local configuration
+├── .github/
+│   ├── agents/                  # Copilot agents (copied by spec-kit init, framework-owned)
+│   │   ├── speckit.analyze.agent.md
+│   │   ├── speckit.checklist.agent.md
+│   │   ├── speckit.clarify.agent.md
+│   │   ├── speckit.constitution.agent.md
+│   │   ├── speckit.create-pbi.agent.md
+│   │   ├── speckit.implement.agent.md
+│   │   ├── speckit.pickup-task.agent.md
+│   │   ├── speckit.plan.agent.md
+│   │   ├── speckit.push-refinements.agent.md
+│   │   ├── speckit.specify.agent.md
+│   │   ├── speckit.tasks.agent.md
+│   │   ├── speckit.taskstoissues.agent.md
+│   │   └── speckit.validate-install.agent.md
+│   └── prompts/                 # Copilot prompts (copied by spec-kit init, framework-owned)
+│       ├── speckit.analyze.prompt.md
+│       ├── speckit.checklist.prompt.md
+│       ├── speckit.clarify.prompt.md
+│       ├── speckit.constitution.prompt.md
+│       ├── speckit.create-pbi.prompt.md
+│       ├── speckit.implement.prompt.md
+│       ├── speckit.pickup-task.prompt.md
+│       ├── speckit.plan.prompt.md
+│       ├── speckit.push-refinements.prompt.md
+│       ├── speckit.specify.prompt.md
+│       ├── speckit.tasks.prompt.md
+│       ├── speckit.taskstoissues.prompt.md
+│       └── speckit.validate-install.prompt.md
+├── .specify/                    # Spec-kit root (copied by spec-kit init)
+│   ├── init-options.json        # Your local configuration (user-owned, not overwritten)
+│   ├── extensions.yml
 │   ├── modules/
 │   │   └── azure-devops-integration.ps1
 │   ├── hooks/
 │   │   ├── after_tasks.ps1      # Enriches tasks with PBI IDs
-│   │   └── ...
+│   │   └── after_tasks-test.ps1
 │   ├── scripts/
 │   │   ├── setup-ado.ps1        # Interactive setup wizard
 │   │   └── powershell/
-│   │       └── create-feature-from-pbi.ps1
+│   │       ├── check-prerequisites.ps1
+│   │       ├── common.ps1
+│   │       ├── create-feature-from-pbi.ps1
+│   │       ├── create-new-feature.ps1
+│   │       ├── create-pbi-for-specify.ps1
+│   │       ├── create-test-pbis.ps1
+│   │       ├── deep-test-ado-workflow.ps1
+│   │       ├── push-pbi-refinements.ps1
+│   │       ├── select-pbi-for-specify.ps1
+│   │       ├── setup-plan.ps1
+│   │       ├── test-functionality.ps1
+│   │       ├── update-agent-context.ps1
+│   │       └── validate-consumer-install.ps1
+│   ├── templates/
+│   │   ├── agent-file-template.md
+│   │   ├── checklist-template.md
+│   │   ├── constitution-template.md
+│   │   ├── plan-template.md
+│   │   ├── spec-template.md
+│   │   └── tasks-template.md
 │   └── docs/
 │       ├── AZURE_DEVOPS_SETUP.md
 │       ├── GITFLOW_SETUP.md
-│       └── NPM_ACCOUNT_SETUP.md
+│       ├── POWERSHELL_SCRIPTS.md
+│       └── WORKFLOW_GUIDE.md
 ├── specs/
 │   └── 001-feature-name/        # Created by create-new-feature/create-feature-from-pbi.ps1
 │       ├── spec.md
@@ -145,6 +232,9 @@ your-repo/
 ├── package.json
 └── README.md
 ```
+
+> **Note:** `.github/agents/` and `.github/prompts/` are copied into your repo by `spec-kit init` and should be committed.
+> They are **overwritten** on every `init` run (framework-owned). Do not edit them — customizations will be lost on update.
 
 ## Documentation
 
@@ -169,12 +259,6 @@ your-repo/
   - Creating features from PBIs
   - Release and hotfix procedures
   - CI/CD automation patterns
-
-- **[NPM Account Setup](./.specify/docs/NPM_ACCOUNT_SETUP.md)** - Setting up NPM publishing
-  - Creating NPM accounts and scopes
-  - Generating authentication tokens
-  - Configuring GitHub secrets
-  - Publishing new versions
 
 ## Environment Setup
 
@@ -227,9 +311,8 @@ export ADO_PAT_TOKEN="your-pat-token-here"
 - Verify organization and project names in init-options.json
 
 ### "Version mismatch" error during NPM publish
-- Ensure package.json version matches the git tag (v0.5.1 -> "0.5.1")
+- Ensure package.json version matches the git tag (e.g. `v1.2.3` → `"1.2.3"`)
 - Commit and push before creating the tag
-- See [NPM Account Setup](./.specify/docs/NPM_ACCOUNT_SETUP.md#troubleshooting)
 
 ### "ExecutionPolicy" error in PowerShell
 ```powershell
@@ -284,10 +367,10 @@ npm test
 ## Versioning
 
 - **spec-kit**: Follows semantic versioning (MAJOR.MINOR.PATCH)
-- **Git Tags**: Format `v0.5.1` triggers automated NPM publication
+- **Git Tags**: Format `vX.Y.Z` triggers automated NPM publication
 - **NPM Package**: Published as `@arthurpsevero23/spec-kit`
 
-Current Version: **0.5.1**
+Current Version: **0.6.0**
 
 ## Publishing Updates
 
@@ -299,12 +382,12 @@ nano package.json  # Change version
 
 # 2. Commit and push
 git add .
-git commit -m "Bump version to 0.5.1"
+git commit -m "Bump version to X.Y.Z"
 git push origin main
 
 # 3. Create and push git tag (triggers GitHub Actions)
-git tag v0.5.1
-git push origin v0.5.1
+git tag vX.Y.Z
+git push origin vX.Y.Z
 
 # 4. Watch the publish workflow
 # GitHub → Actions → "Publish to NPM"
@@ -381,5 +464,5 @@ MIT - See LICENSE file for details
 ---
 
 **Last Updated**: March 2026  
-**Current Version**: 0.5.1  
+**Current Version**: 0.6.0  
 **Status**: Active Development ✓
