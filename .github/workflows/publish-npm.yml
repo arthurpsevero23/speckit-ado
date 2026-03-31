@@ -7,11 +7,11 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: npm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,9 +50,7 @@ jobs:
         run: npm test --if-present
 
       - name: Publish to NPM
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
