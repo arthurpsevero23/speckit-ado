@@ -19,11 +19,11 @@ yarn add @arthurpsevero23/spec-kit
 
 ### 1. First Time Setup
 ```bash
-# Initialize the template files in your repo
-npx spec-kit init
+# Install the package
+npm install @arthurpsevero23/spec-kit
 
-# Run the setup wizard (PowerShell required)
-pwsh -NoProfile -ExecutionPolicy Bypass -File .setup-spec-kit.ps1
+# Run the setup wizard (installs, initializes, and copies agents/prompts)
+powershell -ExecutionPolicy Bypass -File .\node_modules\@arthurpsevero23\spec-kit\.setup-spec-kit.ps1
 ```
 
 ### 2. Configure Azure DevOps

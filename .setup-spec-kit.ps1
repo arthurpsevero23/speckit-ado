@@ -1,6 +1,6 @@
 # Installation template for other repositories
 # This script should be run in other repos to set up @arthurpsevero23/spec-kit
-# Usage: pwsh -NoProfile -ExecutionPolicy Bypass -File .setup-spec-kit.ps1
+# Usage: powershell -ExecutionPolicy Bypass -File .\node_modules\@arthurpsevero23\spec-kit\.setup-spec-kit.ps1
 
 param(
     [string]$SkipNpmInstall = $false,
@@ -43,18 +43,16 @@ else {
     Write-Host "[-] Skipping npm install (--SkipNpmInstall)" -ForegroundColor Yellow
 }
 
-# Step 3: Create local .specify folder structure
+# Step 3: Run spec-kit init (copies .specify, .github/agents, .github/prompts to project root)
 Write-Host ""
-Write-Host "[3/5] Setting up .specify folder structure..." -ForegroundColor Yellow
-$specifyPath = ".specify"
-$localInitPath = ".specify/init-options.json"
-
-if (Test-Path $localInitPath) {
-    Write-Host "[-] Local init-options.json already exists - skipping" -ForegroundColor Yellow
+Write-Host "[3/5] Running spec-kit init..." -ForegroundColor Yellow
+try {
+    npx spec-kit init
+    Write-Host "[OK] spec-kit init completed" -ForegroundColor Green
 }
-else {
-    Write-Host "[-] Local init-options.json not found - you'll need to configure this" -ForegroundColor Yellow
-    Write-Host "   Use 'npm list @arthurpsevero23/spec-kit' to find the installed location" -ForegroundColor Gray
+catch {
+    Write-Host "[FAIL] spec-kit init failed: $_" -ForegroundColor Red
+    exit 1
 }
 
 # Step 4: Create project-specific init-options.json template
@@ -118,19 +116,18 @@ Write-Host "[5/5] Setup Summary" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "1. Initialize your repo with spec-kit:" -ForegroundColor White
-Write-Host "   npx spec-kit init" -ForegroundColor Gray
-Write-Host ""
-Write-Host "2. Create a .specify/init-options.json in your repo with:" -ForegroundColor White
+Write-Host "1. Create/update .specify/init-options.json with:" -ForegroundColor White
 Write-Host "   - Your Azure DevOps organization name" -ForegroundColor Gray
 Write-Host "   - Your Azure DevOps project name" -ForegroundColor Gray
 Write-Host "   - Set ADO_PAT_TOKEN environment variable" -ForegroundColor Gray
 Write-Host ""
-Write-Host "3. Run interactive setup:" -ForegroundColor White
+Write-Host "2. Run interactive setup:" -ForegroundColor White
 Write-Host "   $psExe -NoProfile -ExecutionPolicy Bypass ./.specify/scripts/setup-ado.ps1" -ForegroundColor Gray
 Write-Host ""
-Write-Host "4. Create your first feature from a PBI:" -ForegroundColor White
+Write-Host "3. Create your first feature from a PBI:" -ForegroundColor White
 Write-Host "   $psExe -NoProfile -ExecutionPolicy Bypass ./.specify/scripts/powershell/create-feature-from-pbi.ps1" -ForegroundColor Gray
+Write-Host ""
+Write-Host "4. Use /speckit.specify in VS Code Copilot Chat" -ForegroundColor White
 Write-Host ""
 
 # Step 6: Optional interactive setup

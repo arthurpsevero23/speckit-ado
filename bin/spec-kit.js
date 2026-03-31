@@ -124,7 +124,7 @@ function initProject() {
   console.log("Initialization complete.");
   console.log("Next steps:");
   console.log("  1. Commit the new .specify/, .github/agents/, and .github/prompts/ folders");
-  console.log("  2. Run: pwsh -NoProfile -ExecutionPolicy Bypass -File .setup-spec-kit.ps1");
+  console.log("  2. Run: powershell -ExecutionPolicy Bypass -File .\\node_modules\\@arthurpsevero23\\spec-kit\\.setup-spec-kit.ps1");
   console.log("  3. Use /speckit.specify in VS Code Copilot Chat");
 }
 
