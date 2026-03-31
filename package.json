@@ -1,6 +1,6 @@
 {
   "name": "@arthurpsevero23/spec-kit",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "AI-driven specification to task breakdown framework with Azure DevOps PBI integration and GitFlow branching support",
   "main": "index.js",
   "exports": {
