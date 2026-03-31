@@ -22,9 +22,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-
-      - name: Configure npm registry
-        run: npm config set registry https://registry.npmjs.org/
+          registry-url: "https://registry.npmjs.org"
 
       - name: Extract version from tag
         id: version
@@ -54,6 +52,8 @@ jobs:
 
       - name: Publish to NPM
         run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
