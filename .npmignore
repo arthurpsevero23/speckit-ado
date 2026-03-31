@@ -15,8 +15,6 @@ specs/
 .specify/context/
 .specify/init-options.json
 .specify/memory/
-.specify/scripts/setup-ado.ps1
-.specify/scripts/powershell/create-feature-from-pbi.ps1
 
 # Logs and outputs
 *.log

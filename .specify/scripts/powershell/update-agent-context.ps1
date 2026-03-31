@@ -89,7 +89,7 @@ function Write-Success {
         [Parameter(Mandatory=$true)]
         [string]$Message
     )
-    Write-Host "$([char]0x2713) $Message" 
+    Write-Host "[OK] $Message" 
 }
 
 function Write-WarningMsg { 

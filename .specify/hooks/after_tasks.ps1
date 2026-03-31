@@ -105,7 +105,7 @@ function Main() {
     # Parse and match tasks
     Write-Host "`nMatching tasks to PBIs..." -ForegroundColor Cyan
     
-    $taskPattern = '^\s*-\s+\[\s*\]\s+(\[T\d{3}\])\s+(.*?)(?:\s+in\s+.+)?$'
+    $taskPattern = '^\s*-\s+\[[xX ]?\]\s+(\[T\d{3}\])\s+(.*?)(?:\s+in\s+.+)?$'
     $matchCount = 0
     $unmatchedCount = 0
     $newLines = @()
@@ -148,8 +148,7 @@ function Main() {
     
     # Write updated tasks
     Write-Host "`nUpdating tasks.md..." -ForegroundColor Cyan
-    $newContent = $newLines -join "`n"
-    Set-Content -Path $tasksPath -Value $newContent -Encoding UTF8
+    Set-Content -Path $tasksPath -Value $newLines -Encoding UTF8
     Write-Host "[OK] Updated $tasksPath" -ForegroundColor Green
     Write-Host "     Matched: $matchCount, Unmatched: $unmatchedCount" -ForegroundColor Gray
     
@@ -181,7 +180,7 @@ function Main() {
         $logLines += ""
     }
     
-    $logLines -join "`n" | Set-Content -Path $logPath -Encoding UTF8
+    Set-Content -Path $logPath -Value $logLines -Encoding UTF8
     Write-Host "[OK] Mapping log written to: $logPath" -ForegroundColor Green
     
     Write-Host "`n=== Hook Complete ===" -ForegroundColor Cyan

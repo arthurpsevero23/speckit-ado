@@ -23,10 +23,14 @@
  *   - README.md - Project overview
  */
 
-export const VERSION = "0.5.1";
+import { readFileSync } from 'node:fs';
+
+const _pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
+
+export const VERSION = _pkg.version;
 
 export const PACKAGE_INFO = {
-  name: "@arthurpsevero23/spec-kit",
+  name: _pkg.name,
   version: VERSION,
   description:
     "AI-driven specification to task breakdown framework with Azure DevOps PBI integration",

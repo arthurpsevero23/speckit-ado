@@ -45,12 +45,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/arthurpsevero23/spec-kit-poc.git"
+    "url": "git+https://github.com/arthurpsevero23/speckit-ado.git"
   },
   "bugs": {
-    "url": "https://github.com/arthurpsevero23/spec-kit-poc/issues"
+    "url": "https://github.com/arthurpsevero23/speckit-ado/issues"
   },
-  "homepage": "https://github.com/arthurpsevero23/spec-kit-poc#readme",
+  "homepage": "https://github.com/arthurpsevero23/speckit-ado#readme",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"

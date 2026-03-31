@@ -155,15 +155,18 @@ function Get-AzureDevOpsPBIs {
     }
 
     if ($FilterByIteration) {
-        $query += " AND [System.IterationPath] UNDER '$FilterByIteration'"
+        $safeIteration = $FilterByIteration -replace "'", "''"
+        $query += " AND [System.IterationPath] UNDER '$safeIteration'"
     }
 
     if ($FilterByAssignedTo) {
-        $query += " AND [System.AssignedTo] CONTAINS '$FilterByAssignedTo'"
+        $safeAssigned = $FilterByAssignedTo -replace "'", "''"
+        $query += " AND [System.AssignedTo] CONTAINS '$safeAssigned'"
     }
 
     if ($SearchText) {
-        $query += " AND [System.Title] CONTAINS '$SearchText'"
+        $safeSearch = $SearchText -replace "'", "''"
+        $query += " AND [System.Title] CONTAINS '$safeSearch'"
     }
 
     $query += " ORDER BY [System.ChangedDate] DESC"
@@ -250,7 +253,8 @@ function Build-StateFilterExpression {
 
     $parts = @()
     foreach ($state in $States) {
-        $parts += "[System.State] = '$state'"
+        $safeState = $state -replace "'", "''"
+        $parts += "[System.State] = '$safeState'"
     }
 
     return ($parts -join " OR ")

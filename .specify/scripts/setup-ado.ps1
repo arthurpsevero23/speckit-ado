@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 param(
     [Parameter(Mandatory=$false)]
     [switch]$Skip
@@ -94,7 +95,7 @@ if ($org -and $proj -and $pat) {
         Authorization = "Basic $([Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(':' + $pat)))"
         "Content-Type" = "application/json"
     }
-    $qry = "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Product Backlog Item' LIMIT 1"
+    $qry = "SELECT TOP 1 [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Product Backlog Item'"
     $body = @{ query = $qry } | ConvertTo-Json
     
     try {

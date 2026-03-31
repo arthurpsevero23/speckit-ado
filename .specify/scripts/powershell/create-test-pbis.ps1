@@ -20,7 +20,7 @@ Write-Host ""
 # Get PAT token
 $patToken = [Environment]::GetEnvironmentVariable($PatTokenEnvVar)
 if (-not $patToken) {
-    Write-Host "✗ Error: $PatTokenEnvVar environment variable not set" -ForegroundColor Red
+    Write-Host "[FAIL] Error: $PatTokenEnvVar environment variable not set" -ForegroundColor Red
     exit 1
 }
 
@@ -102,14 +102,14 @@ foreach ($pbi in $testPbis) {
             -ContentType "application/json-patch+json" `
             -Body $body
 
-        Write-Host "  ✓ Created PBI #$($response.id): $($response.fields.'System.Title')" -ForegroundColor Green
+        Write-Host "  [OK] Created PBI #$($response.id): $($response.fields.'System.Title')" -ForegroundColor Green
         $createdPbis += $response
         
         # Small delay to avoid rate limiting
         Start-Sleep -Milliseconds 500
     }
     catch {
-        Write-Host "  ✗ Failed to create PBI: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "  [FAIL] Failed to create PBI: $($_.Exception.Message)" -ForegroundColor Red
         exit 1
     }
 }
