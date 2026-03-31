@@ -7,7 +7,7 @@
     ".": "./index.js"
   },
   "bin": {
-    "spec-kit": "./bin/spec-kit.js"
+    "spec-kit": "bin/spec-kit.js"
   },
   "type": "module",
   "scripts": {
@@ -45,7 +45,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/arthurpsevero23/spec-kit-poc.git"
+    "url": "git+https://github.com/arthurpsevero23/spec-kit-poc.git"
   },
   "bugs": {
     "url": "https://github.com/arthurpsevero23/spec-kit-poc/issues"
