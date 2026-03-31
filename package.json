@@ -13,7 +13,7 @@
   "scripts": {
     "test": "node ./bin/spec-kit.js --help",
     "pack:dry": "npm pack --dry-run",
-    "prepublishOnly": "node -e \"const p=require('./package.json'); console.log('Publishing '+p.name+' v'+p.version)\" && npm run lint && npm run test",
+    "prepublishOnly": "node --input-type=module -e \"import {readFileSync} from 'node:fs'; const p=JSON.parse(readFileSync(new URL('./package.json',import.meta.url),'utf8')); console.log('Publishing '+p.name+' v'+p.version);\" && npm run lint && npm run test",
     "lint": "echo \"No lint configured yet\""
   },
   "files": [
@@ -56,6 +56,6 @@
     "registry": "https://registry.npmjs.org"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.7.0"
   }
 }

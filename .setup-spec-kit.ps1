@@ -9,6 +9,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+if (Get-Command pwsh -ErrorAction SilentlyContinue) {
+    $psExe = "pwsh"
+} else {
+    $psExe = "powershell"
+}
+
+
 Write-Host "================================" -ForegroundColor Cyan
 Write-Host "@arthurpsevero23/spec-kit Setup" -ForegroundColor Cyan
 Write-Host "================================" -ForegroundColor Cyan
@@ -18,10 +25,10 @@ Write-Host ""
 Write-Host "[1/5] Verifying npm installation..." -ForegroundColor Yellow
 try {
     $npmVersion = npm --version
-    Write-Host "✓ npm v$npmVersion found" -ForegroundColor Green
+    Write-Host "[OK] npm v$npmVersion found" -ForegroundColor Green
 }
 catch {
-    Write-Host "✗ npm not found. Please install Node.js/npm first." -ForegroundColor Red
+    Write-Host "[FAIL] npm not found. Please install Node.js/npm first." -ForegroundColor Red
     exit 1
 }
 
@@ -30,10 +37,10 @@ Write-Host ""
 Write-Host "[2/5] Installing @arthurpsevero23/spec-kit..." -ForegroundColor Yellow
 if ($SkipNpmInstall -eq $false) {
     npm install @arthurpsevero23/spec-kit
-    Write-Host "✓ Package installed" -ForegroundColor Green
+    Write-Host "[OK] Package installed" -ForegroundColor Green
 }
 else {
-    Write-Host "⊘ Skipping npm install (--SkipNpmInstall)" -ForegroundColor Yellow
+    Write-Host "[-] Skipping npm install (--SkipNpmInstall)" -ForegroundColor Yellow
 }
 
 # Step 3: Create local .specify folder structure
@@ -43,10 +50,10 @@ $specifyPath = ".specify"
 $localInitPath = ".specify/init-options.json"
 
 if (Test-Path $localInitPath) {
-    Write-Host "⊘ Local init-options.json already exists - skipping" -ForegroundColor Yellow
+    Write-Host "[-] Local init-options.json already exists - skipping" -ForegroundColor Yellow
 }
 else {
-    Write-Host "⊘ Local init-options.json not found - you'll need to configure this" -ForegroundColor Yellow
+    Write-Host "[-] Local init-options.json not found - you'll need to configure this" -ForegroundColor Yellow
     Write-Host "   Use 'npm list @arthurpsevero23/spec-kit' to find the installed location" -ForegroundColor Gray
 }
 
@@ -94,11 +101,11 @@ $localConfigContent = @'
 # Check if config exists in node_modules
 $nodeModulesInitPath = "node_modules/@arthurpsevero23/spec-kit/.specify/init-options.json"
 if (Test-Path $nodeModulesInitPath) {
-    Write-Host "✓ Template found in npm package" -ForegroundColor Green
+    Write-Host "[OK] Template found in npm package" -ForegroundColor Green
     Write-Host "  Location: $nodeModulesInitPath" -ForegroundColor Gray
 }
 else {
-    Write-Host "⊘ Template not found in expected location" -ForegroundColor Yellow
+    Write-Host "[-] Template not found in expected location" -ForegroundColor Yellow
 }
 
 Write-Host ""
@@ -120,10 +127,10 @@ Write-Host "   - Your Azure DevOps project name" -ForegroundColor Gray
 Write-Host "   - Set ADO_PAT_TOKEN environment variable" -ForegroundColor Gray
 Write-Host ""
 Write-Host "3. Run interactive setup:" -ForegroundColor White
-Write-Host "   pwsh -NoProfile -ExecutionPolicy Bypass ./.specify/scripts/setup-ado.ps1" -ForegroundColor Gray
+Write-Host "   $psExe -NoProfile -ExecutionPolicy Bypass ./.specify/scripts/setup-ado.ps1" -ForegroundColor Gray
 Write-Host ""
 Write-Host "4. Create your first feature from a PBI:" -ForegroundColor White
-Write-Host "   pwsh -NoProfile -ExecutionPolicy Bypass ./.specify/scripts/powershell/create-feature-from-pbi.ps1" -ForegroundColor Gray
+Write-Host "   $psExe -NoProfile -ExecutionPolicy Bypass ./.specify/scripts/powershell/create-feature-from-pbi.ps1" -ForegroundColor Gray
 Write-Host ""
 
 # Step 6: Optional interactive setup
@@ -139,7 +146,7 @@ if ($InteractiveSetup -eq $true) {
             & $setupScript
         }
         else {
-            Write-Host "✗ Setup script not found at: $setupScript" -ForegroundColor Red
+            Write-Host "[FAIL] Setup script not found at: $setupScript" -ForegroundColor Red
             Write-Host "  Try running setup from the npm package location" -ForegroundColor Yellow
         }
     }

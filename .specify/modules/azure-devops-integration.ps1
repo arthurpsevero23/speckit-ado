@@ -250,7 +250,7 @@ function Build-StateFilterExpression {
 
     $parts = @()
     foreach ($state in $States) {
-        $parts += "[State] = '$state'"
+        $parts += "[System.State] = '$state'"
     }
 
     return ($parts -join " OR ")

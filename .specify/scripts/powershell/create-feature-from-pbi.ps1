@@ -40,7 +40,6 @@ param(
     [int]$PbiId = 0,
     
     [Parameter()]
-    [ValidateSet('feature', 'bugfix', 'refactor')]
     [string]$WorkType = 'feature',
     
     [Parameter()]
@@ -52,6 +51,12 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Validate WorkType
+if ($WorkType -notin @('feature', 'bugfix', 'refactor') -and $WorkType -notmatch '^cr_\d+$') {
+    Write-Error "Invalid WorkType '$WorkType'. Must be: feature, bugfix, refactor, or cr_<number>"
+    exit 1
+}
 
 # Show help
 if ($Help) {
@@ -213,9 +218,9 @@ try {
 if ($hasGit) {
     # Determine base branch
     $baseBranch = 'develop'
-    if ((git branch -r | grep -i 'origin/develop' 2>$null)) {
+    if (git branch -r 2>$null | Select-String -Pattern 'origin/develop' -Quiet) {
         $baseBranch = 'origin/develop'
-    } elseif ((git branch -r | grep -i 'origin/main' 2>$null)) {
+    } elseif (git branch -r 2>$null | Select-String -Pattern 'origin/main' -Quiet) {
         $baseBranch = 'origin/main'
     }
     
