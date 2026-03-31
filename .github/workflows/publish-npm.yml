@@ -23,10 +23,8 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Configure npm for OIDC publishing
-        run: |
-          npm config set "//registry.npmjs.org/:_authToken" ""
-          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+      - name: Configure npm registry
+        run: npm config set registry https://registry.npmjs.org/
 
       - name: Extract version from tag
         id: version
