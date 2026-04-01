@@ -87,7 +87,15 @@ catch {
 }
 
 try {
-    $versionOutput = Test-CommandOutputContains -Command 'npx spec-kit --version' -ExpectedText '0.5.1'
+    $pkgJsonPath = if (Test-Path 'node_modules/@arthurpsevero23/spec-kit/package.json') {
+        'node_modules/@arthurpsevero23/spec-kit/package.json'
+    } elseif (Test-Path 'package.json') {
+        'package.json'
+    } else {
+        throw 'Cannot locate package.json to determine expected version'
+    }
+    $expectedVersion = (Get-Content $pkgJsonPath -Raw | ConvertFrom-Json).version
+    $versionOutput = Test-CommandOutputContains -Command 'npx spec-kit --version' -ExpectedText $expectedVersion
     Add-Result -Results $results -Name 'CLI version' -Status 'PASS' -Details $versionOutput
 }
 catch {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, cpSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -80,7 +80,10 @@ function initProject() {
     const initOptsSource = join(sourceSpecify, "init-options.json");
     const initOptsTarget = join(targetSpecify, "init-options.json");
     if (!existsSync(initOptsTarget) && existsSync(initOptsSource)) {
-      cpSync(initOptsSource, initOptsTarget);
+      const initOpts = JSON.parse(readFileSync(initOptsSource, "utf8"));
+      const pkg = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
+      initOpts.speckit_version = pkg.version;
+      writeFileSync(initOptsTarget, JSON.stringify(initOpts, null, 2) + "\n", "utf8");
       console.log("  ✔ init-options.json created (default config).");
     } else {
       console.log("  ⏭ init-options.json already exists. Skipping (user config).");

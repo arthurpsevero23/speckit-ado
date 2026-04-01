@@ -10,9 +10,10 @@ Transform your specifications into actionable tasks, enriched with Azure DevOps 
 npm install @arthurpsevero23/spec-kit
 ```
 
-Or with yarn:
-```bash
-yarn add @arthurpsevero23/spec-kit
+Then run the setup wizard:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\node_modules\@arthurpsevero23\spec-kit\.setup-spec-kit.ps1
 ```
 
 ## Quick Start
@@ -71,12 +72,13 @@ The package has two entry surfaces:
 
 Recommended flow:
 
-1. `npx spec-kit init`
-2. Run `./.specify/scripts/setup-ado.ps1`
-3. Start with `/speckit.specify`
-4. Optionally use `/speckit.pickup-task` to attach an existing ADO item first
-5. Continue with `/speckit.clarify`, `/speckit.plan`, and `/speckit.tasks`
-6. Use `/speckit.push-refinements` to sync refined fields back to Azure DevOps
+1. `npm install @arthurpsevero23/spec-kit`
+2. `powershell -ExecutionPolicy Bypass -File .\node_modules\@arthurpsevero23\spec-kit\.setup-spec-kit.ps1`
+3. Run `./.specify/scripts/setup-ado.ps1`
+4. Start with `/speckit.specify`
+5. Optionally use `/speckit.pickup-task` to attach an existing ADO item first
+6. Continue with `/speckit.clarify`, `/speckit.plan`, and `/speckit.tasks`
+7. Use `/speckit.push-refinements` to sync refined fields back to Azure DevOps
 
 ## Agents Reference
 

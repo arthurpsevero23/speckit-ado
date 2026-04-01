@@ -59,9 +59,11 @@ catch {
 Write-Host ""
 Write-Host "[4/5] Creating local configuration template..." -ForegroundColor Yellow
 
-$localConfigContent = @'
+$speckitVersion = (Get-Content (Join-Path $PSScriptRoot 'package.json') -Raw | ConvertFrom-Json).version
+
+$localConfigContent = @"
 {
-  "speckit_version": "0.5.1",
+  "speckit_version": "$speckitVersion",
   "stages": {
     "specify": {
       "engine": "claude",
@@ -94,7 +96,7 @@ $localConfigContent = @'
     "refactorBranch": "refactor"
   }
 }
-'@
+"@
 
 # Check if config exists in node_modules
 $nodeModulesInitPath = "node_modules/@arthurpsevero23/spec-kit/.specify/init-options.json"
