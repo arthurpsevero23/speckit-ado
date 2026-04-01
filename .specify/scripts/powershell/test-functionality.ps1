@@ -3,6 +3,7 @@
 
 $ErrorActionPreference = "Continue"
 $tests = @()
+$projectRoot = (Get-Location).Path
 
 Write-Host ""
 Write-Host "========================================================"
@@ -14,7 +15,7 @@ Write-Host ""
 Write-Host "TEST 1: Configuration Loading"
 Write-Host "========================================================" -ForegroundColor Yellow
 
-$cfgPath = ".\.specify\init-options.json"
+$cfgPath = Join-Path $projectRoot '.specify/init-options.json'
 if (Test-Path $cfgPath) {
     $cfg = Get-Content $cfgPath | ConvertFrom-Json
     Write-Host "[PASS] Config loaded" -ForegroundColor Green
@@ -33,7 +34,7 @@ Write-Host ""
 Write-Host "TEST 2: Module Loading"
 Write-Host "========================================================" -ForegroundColor Yellow
 
-$modPath = ".\.specify\modules\azure-devops-integration.ps1"
+$modPath = Join-Path $projectRoot '.specify/modules/azure-devops-integration.ps1'
 if (Test-Path $modPath) {
     . $modPath
     Write-Host "[PASS] Module loaded" -ForegroundColor Green
@@ -85,19 +86,19 @@ Write-Host "TEST 4: Hook File Structure"
 Write-Host "========================================================" -ForegroundColor Yellow
 
 $files = @(
-    ".\.specify\hooks\after_tasks.ps1",
-    ".\.specify\extensions.yml",
-    ".\.specify\scripts\setup-ado.ps1",
-    ".\.specify\scripts\powershell\select-pbi-for-specify.ps1",
-    ".\.specify\scripts\powershell\create-pbi-for-specify.ps1",
-    ".\.specify\scripts\powershell\deep-test-ado-workflow.ps1",
-    ".\.specify\scripts\powershell\validate-consumer-install.ps1",
-    ".\.github\agents\speckit.create-pbi.agent.md",
-    ".\.github\agents\speckit.validate-install.agent.md",
-    ".\.github\prompts\speckit.create-pbi.prompt.md",
-    ".\.github\prompts\speckit.validate-install.prompt.md",
-    ".\.specify\docs\WORKFLOW_GUIDE.md",
-    ".\.specify\docs\POWERSHELL_SCRIPTS.md"
+    (Join-Path $projectRoot '.specify/hooks/after_tasks.ps1'),
+    (Join-Path $projectRoot '.specify/extensions.yml'),
+    (Join-Path $projectRoot '.specify/scripts/setup-ado.ps1'),
+    (Join-Path $projectRoot '.specify/scripts/powershell/select-pbi-for-specify.ps1'),
+    (Join-Path $projectRoot '.specify/scripts/powershell/create-pbi-for-specify.ps1'),
+    (Join-Path $projectRoot '.specify/scripts/powershell/deep-test-ado-workflow.ps1'),
+    (Join-Path $projectRoot '.specify/scripts/powershell/validate-consumer-install.ps1'),
+    (Join-Path $projectRoot '.github/agents/speckit.create-pbi.agent.md'),
+    (Join-Path $projectRoot '.github/agents/speckit.validate-install.agent.md'),
+    (Join-Path $projectRoot '.github/prompts/speckit.create-pbi.prompt.md'),
+    (Join-Path $projectRoot '.github/prompts/speckit.validate-install.prompt.md'),
+    (Join-Path $projectRoot '.specify/docs/WORKFLOW_GUIDE.md'),
+    (Join-Path $projectRoot '.specify/docs/POWERSHELL_SCRIPTS.md')
 )
 
 $allOk = $true

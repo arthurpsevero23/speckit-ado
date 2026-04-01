@@ -9,6 +9,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Resolve the consumer project root (the directory where this script was invoked from)
+$projectRoot = (Get-Location).Path
+
 if (Get-Command pwsh -ErrorAction SilentlyContinue) {
     $psExe = "pwsh"
 } else {
@@ -99,7 +102,7 @@ $localConfigContent = @"
 "@
 
 # Check if config exists in node_modules
-$nodeModulesInitPath = "node_modules/@arthurpsevero23/spec-kit/.specify/init-options.json"
+$nodeModulesInitPath = Join-Path $projectRoot 'node_modules/@arthurpsevero23/spec-kit/.specify/init-options.json'
 if (Test-Path $nodeModulesInitPath) {
     Write-Host "[OK] Template found in npm package" -ForegroundColor Green
     Write-Host "  Location: $nodeModulesInitPath" -ForegroundColor Gray
@@ -137,7 +140,7 @@ if (-not $SkipInteractiveSetup) {
     Write-Host ""
     $response = Read-Host "Would you like to run the interactive ADO setup now? (y/n)"
     if ($response -eq "y" -or $response -eq "Y") {
-        $setupScript = "./.specify/scripts/setup-ado.ps1"
+        $setupScript = Join-Path $projectRoot '.specify/scripts/setup-ado.ps1'
         if (Test-Path $setupScript) {
             Write-Host ""
             Write-Host "Starting interactive setup..." -ForegroundColor Cyan

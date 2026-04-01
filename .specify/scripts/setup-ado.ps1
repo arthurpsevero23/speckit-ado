@@ -11,10 +11,12 @@ if ($specKitRoot -isnot [System.IO.DirectoryInfo]) {
     $specKitRoot = Get-Item $specKitRoot
 }
 
-# Find .specify folder
+# Find .specify folder (limit to 3 levels up to avoid matching unrelated projects)
 $dir = $specKitRoot
 $found = $false
-while ($dir) {
+$maxDepth = 3
+$depth = 0
+while ($dir -and $depth -lt $maxDepth) {
     $testPath = Join-Path $dir '.specify'
     if (Test-Path $testPath) {
         $specKitRoot = $dir
@@ -22,6 +24,7 @@ while ($dir) {
         break
     }
     $dir = $dir.Parent
+    $depth++
     if (-not $dir) { break }
 }
 

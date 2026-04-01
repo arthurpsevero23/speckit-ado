@@ -47,12 +47,19 @@ function Test-CommandOutputContains {
 
 $results = [System.Collections.Generic.List[object]]::new()
 $shellExe = Get-PowerShellExecutable
+$projectRoot = (Get-Location).Path
 
 Write-Host '=== spec-kit Consumer Install Validation ===' -ForegroundColor Cyan
 
+# Guard: ensure we're running from a project root
+if (-not (Test-Path (Join-Path $projectRoot 'package.json'))) {
+    Write-Host '[FAIL] This script must be run from the project root (where package.json is located).' -ForegroundColor Red
+    exit 1
+}
+
 try {
-    $hasInstalledPackage = Test-Path 'node_modules/@arthurpsevero23/spec-kit'
-    $hasLocalPackageSource = Test-Path 'package.json'
+    $hasInstalledPackage = Test-Path (Join-Path $projectRoot 'node_modules/@arthurpsevero23/spec-kit')
+    $hasLocalPackageSource = Test-Path (Join-Path $projectRoot 'package.json')
 
     if (-not $hasInstalledPackage -and -not $hasLocalPackageSource) {
         throw 'Neither installed package folder nor local package source was found.'
@@ -66,8 +73,10 @@ catch {
 }
 
 try {
-    if ((Test-Path 'node_modules/@arthurpsevero23/spec-kit/bin/spec-kit.js') -or (Test-Path 'bin/spec-kit.js')) {
-        $details = if (Test-Path 'node_modules/@arthurpsevero23/spec-kit/bin/spec-kit.js') { 'Using installed package CLI' } else { 'Using local source CLI' }
+    $nmBinPath = Join-Path $projectRoot 'node_modules/@arthurpsevero23/spec-kit/bin/spec-kit.js'
+    $localBinPath = Join-Path $projectRoot 'bin/spec-kit.js'
+    if ((Test-Path $nmBinPath) -or (Test-Path $localBinPath)) {
+        $details = if (Test-Path $nmBinPath) { 'Using installed package CLI' } else { 'Using local source CLI' }
         Add-Result -Results $results -Name 'CLI entrypoint present' -Status 'PASS' -Details $details
     }
     else {
@@ -87,10 +96,12 @@ catch {
 }
 
 try {
-    $pkgJsonPath = if (Test-Path 'node_modules/@arthurpsevero23/spec-kit/package.json') {
-        'node_modules/@arthurpsevero23/spec-kit/package.json'
-    } elseif (Test-Path 'package.json') {
-        'package.json'
+    $nmPkgJson = Join-Path $projectRoot 'node_modules/@arthurpsevero23/spec-kit/package.json'
+    $localPkgJson = Join-Path $projectRoot 'package.json'
+    $pkgJsonPath = if (Test-Path $nmPkgJson) {
+        $nmPkgJson
+    } elseif (Test-Path $localPkgJson) {
+        $localPkgJson
     } else {
         throw 'Cannot locate package.json to determine expected version'
     }
@@ -103,12 +114,12 @@ catch {
 }
 
 try {
-    if (-not (Test-Path '.specify')) {
+    if (-not (Test-Path (Join-Path $projectRoot '.specify'))) {
         & npx spec-kit init | Out-Null
     }
 
     foreach ($path in @('.specify', '.setup-spec-kit.ps1')) {
-        if (-not (Test-Path $path)) {
+        if (-not (Test-Path (Join-Path $projectRoot $path))) {
             throw "Required initialized path not found: $path"
         }
     }
@@ -131,7 +142,7 @@ try {
     )
 
     foreach ($path in $requiredPaths) {
-        if (-not (Test-Path $path)) {
+        if (-not (Test-Path (Join-Path $projectRoot $path))) {
             throw "Missing required path: $path"
         }
     }
@@ -143,7 +154,8 @@ catch {
 }
 
 try {
-    & $shellExe -NoProfile -ExecutionPolicy Bypass -File '.\.specify\scripts\powershell\test-functionality.ps1' | Out-Null
+    $smokeTestPath = Join-Path $projectRoot '.specify/scripts/powershell/test-functionality.ps1'
+    & $shellExe -NoProfile -ExecutionPolicy Bypass -File $smokeTestPath | Out-Null
     Add-Result -Results $results -Name 'Functionality smoke test' -Status 'PASS'
 }
 catch {
@@ -152,7 +164,8 @@ catch {
 
 if (-not $SkipDeepTest) {
     try {
-        & $shellExe -NoProfile -ExecutionPolicy Bypass -File '.\.specify\scripts\powershell\deep-test-ado-workflow.ps1' -DryRunOnly | Out-Null
+        $deepTestPath = Join-Path $projectRoot '.specify/scripts/powershell/deep-test-ado-workflow.ps1'
+        & $shellExe -NoProfile -ExecutionPolicy Bypass -File $deepTestPath -DryRunOnly | Out-Null
         Add-Result -Results $results -Name 'Deep ADO dry-run test' -Status 'PASS'
     }
     catch {
@@ -165,11 +178,12 @@ else {
 
 if (-not $SkipAdoSetup) {
     try {
-        if (-not (Test-Path '.specify/init-options.json')) {
+        $initOptsPath = Join-Path $projectRoot '.specify/init-options.json'
+        if (-not (Test-Path $initOptsPath)) {
             throw 'init-options.json not found for ADO setup validation'
         }
 
-        $config = Get-Content '.specify/init-options.json' -Raw | ConvertFrom-Json
+        $config = Get-Content $initOptsPath -Raw | ConvertFrom-Json
         $requiredAdoFields = @('enabled', 'organization', 'projectName', 'patTokenEnvVar')
         foreach ($field in $requiredAdoFields) {
             if (-not $config.ado.PSObject.Properties.Name.Contains($field)) {
