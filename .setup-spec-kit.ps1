@@ -3,8 +3,8 @@
 # Usage: powershell -ExecutionPolicy Bypass -File .\node_modules\@arthurpsevero23\spec-kit\.setup-spec-kit.ps1
 
 param(
-    [string]$SkipNpmInstall = $false,
-    [string]$InteractiveSetup = $true
+    [switch]$SkipNpmInstall,
+    [switch]$SkipInteractiveSetup
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,7 +35,7 @@ catch {
 # Step 2: Install package
 Write-Host ""
 Write-Host "[2/5] Installing @arthurpsevero23/spec-kit..." -ForegroundColor Yellow
-if ($SkipNpmInstall -eq $false) {
+if (-not $SkipNpmInstall) {
     npm install @arthurpsevero23/spec-kit
     Write-Host "[OK] Package installed" -ForegroundColor Green
 }
@@ -133,7 +133,7 @@ Write-Host "4. Use /speckit.specify in VS Code Copilot Chat" -ForegroundColor Wh
 Write-Host ""
 
 # Step 6: Optional interactive setup
-if ($InteractiveSetup -eq $true) {
+if (-not $SkipInteractiveSetup) {
     Write-Host ""
     $response = Read-Host "Would you like to run the interactive ADO setup now? (y/n)"
     if ($response -eq "y" -or $response -eq "Y") {
