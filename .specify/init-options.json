@@ -23,10 +23,16 @@
     "creation": {
       "enabled": true,
       "workItemType": "Issue",
-      "defaultState": "New",
+      "defaultState": "To Do",
       "defaultPriority": 3,
       "defaultTags": ["spec-kit-generated"],
-      "persistContextPath": ".specify/context/created-pbi.json"
+      "persistContextPath": ".specify/context/created-pbi.json",
+      "hierarchy": {
+        "createHierarchy": false,
+        "epicWorkItemType": "Epic",
+        "epicState": "To Do",
+        "storyWorkItemType": "Issue"
+      }
     }
   }
 }

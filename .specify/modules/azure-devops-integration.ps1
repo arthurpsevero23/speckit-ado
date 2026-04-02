@@ -738,7 +738,77 @@ function New-AzureDevOpsPBI {
         return Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $body
     }
     catch {
-        throw "Failed to create Product Backlog Item: $($_.Exception.Message)"
+        $errMsg = $_.Exception.Message
+        if ($State -and $_.Exception.Response -and ([int]$_.Exception.Response.StatusCode -eq 400)) {
+            throw "Failed to create work item (HTTP 400). The State '$State' may be invalid for this project's process template. Common valid values: 'To Do' (Basic), 'New' (Scrum), 'Active' (CMMI). Update ado.creation.defaultState in init-options.json. Original error: $errMsg"
+        }
+        throw "Failed to create Product Backlog Item: $errMsg"
+    }
+}
+
+function Set-WorkItemParent {
+<#
+.SYNOPSIS
+Set the parent of an Azure DevOps work item by adding a Hierarchy-Reverse relation.
+
+.PARAMETER Organization
+Azure DevOps organization name.
+
+.PARAMETER ProjectName
+Azure DevOps project name.
+
+.PARAMETER PatToken
+Personal Access Token for authentication.
+
+.PARAMETER ChildId
+Work item ID of the child.
+
+.PARAMETER ParentId
+Work item ID of the parent (epic).
+#>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Organization,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$PatToken,
+
+        [Parameter(Mandatory = $true)]
+        [int]$ChildId,
+
+        [Parameter(Mandatory = $true)]
+        [int]$ParentId
+    )
+
+    $headers = New-AdoHeaders -PatToken $PatToken
+    $headers['Content-Type'] = 'application/json-patch+json'
+
+    $parentUrl = "https://dev.azure.com/$Organization/$ProjectName/_apis/wit/workitems/$ParentId"
+    $patchOps  = @(
+        @{
+            op    = 'add'
+            path  = '/relations/-'
+            value = @{
+                rel        = 'System.LinkTypes.Hierarchy-Reverse'
+                url        = $parentUrl
+                attributes = @{ comment = '' }
+            }
+        }
+    )
+
+    $body = $patchOps | ConvertTo-Json -Depth 6
+    if ($patchOps.Count -eq 1) { $body = "[$body]" }
+
+    $url = "https://dev.azure.com/$Organization/$ProjectName/_apis/wit/workitems/${ChildId}?api-version=7.0"
+
+    try {
+        return Invoke-RestMethod -Uri $url -Method Patch -Headers $headers -Body $body
+    }
+    catch {
+        throw "Failed to set parent $ParentId for child work item ${ChildId}: $($_.Exception.Message)"
     }
 }
 

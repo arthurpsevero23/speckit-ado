@@ -52,6 +52,7 @@ param(
     [string]$State = "",
     [string]$Sprint = "",
     [string]$WorkItemType = "",
+    [switch]$CreateHierarchy,
     [switch]$SetAsSelected,
     [switch]$DryRun,
     [switch]$Json
@@ -146,6 +147,59 @@ function Extract-InlineField {
     }
 
     return ''
+}
+
+function Parse-UserStories {
+    param([string[]]$Lines)
+
+    $stories = [System.Collections.Generic.List[PSCustomObject]]::new()
+    $i = 0
+
+    while ($i -lt $Lines.Count) {
+        if ($Lines[$i] -match '^###\s+User Story (\d+)\s+-\s+(.+?)(?:\s*\(Priority:\s*P\d+\))?\s*$') {
+            $storyNum   = [int]$Matches[1]
+            $storyTitle = $Matches[2].Trim()
+            $i++
+
+            $bodyLines = [System.Collections.Generic.List[string]]::new()
+            while ($i -lt $Lines.Count) {
+                if ($Lines[$i] -match '^#{2,3}\s' -or $Lines[$i] -eq '---') { break }
+                $bodyLines.Add($Lines[$i])
+                $i++
+            }
+
+            # Short description: first non-empty line that is not a bold label
+            $shortDesc = ''
+            foreach ($bl in $bodyLines) {
+                $t = $bl.Trim()
+                if ($t -and -not ($t -match '^\*\*')) { $shortDesc = $t; break }
+            }
+
+            # Acceptance criteria: content after **Acceptance Scenarios**: header
+            $acLines = [System.Collections.Generic.List[string]]::new()
+            $inAc    = $false
+            foreach ($bl in $bodyLines) {
+                if ($bl -match '^\*\*Acceptance Scenarios\*\*') { $inAc = $true; continue }
+                if ($inAc) {
+                    if ($bl -match '^\*\*[^*]' -and $bl -notmatch '^\*\*Given') { break }
+                    $acLines.Add($bl)
+                }
+            }
+            $ac = (($acLines | Where-Object { $_ -ne $null }) -join "`n").Trim()
+
+            $stories.Add([PSCustomObject]@{
+                Number             = $storyNum
+                Title              = $storyTitle
+                Description        = $shortDesc
+                AcceptanceCriteria = $ac
+            })
+        }
+        else {
+            $i++
+        }
+    }
+
+    return , $stories
 }
 
 Add-Type -AssemblyName System.Web
@@ -299,6 +353,35 @@ if (-not $effectiveTitle) {
     exit 1
 }
 
+# ─── Hierarchy detection ──────────────────────────────────────────────────────
+$hierarchyEnabled  = $false
+$epicWorkItemType  = 'Epic'
+$epicState         = $effectiveState
+$storyWorkItemType = $effectiveWorkItemType
+$parsedUserStories = @()
+
+if ($config.ado.creation.PSObject.Properties.Match('hierarchy').Count -gt 0) {
+    $hCfg = $config.ado.creation.hierarchy
+    if ($hCfg -and $hCfg.createHierarchy -eq $true) { $hierarchyEnabled = $true }
+    if ($hCfg.epicWorkItemType) { $epicWorkItemType  = [string]$hCfg.epicWorkItemType }
+    if ($hCfg.epicState)        { $epicState         = [string]$hCfg.epicState }
+    if ($hCfg.storyWorkItemType){ $storyWorkItemType = [string]$hCfg.storyWorkItemType }
+}
+
+if ($PSBoundParameters.ContainsKey('CreateHierarchy') -and $CreateHierarchy) {
+    $hierarchyEnabled = $true
+}
+
+if ($hierarchyEnabled -and $specLines.Count -gt 0) {
+    $parsedUserStories = @(Parse-UserStories -Lines $specLines)
+    if ($parsedUserStories.Count -lt 2) {
+        $hierarchyEnabled = $false
+        if (-not $Json) {
+            Write-Host 'Note: fewer than 2 user stories found — using flat creation mode.' -ForegroundColor Yellow
+        }
+    }
+}
+
 $fieldsApplied = [System.Collections.Generic.List[string]]::new()
 $fieldsApplied.Add('Title')
 if ($effectiveDescription) { $fieldsApplied.Add('Description') }
@@ -311,21 +394,49 @@ if ($effectiveSprint) { $fieldsApplied.Add('Iteration') }
 if ($effectiveWorkItemType) { $fieldsApplied.Add('Work Item Type') }
 
 if ($DryRun) {
-    $preview = [PSCustomObject]@{
-        success = $true
-        dryRun = $true
-        title = $effectiveTitle
-        description = $effectiveDescription
-        acceptanceCriteria = $effectiveAC
-        tags = $effectiveTags
-        storyPoints = $effectiveSP
-        priority = $effectivePriority
-        state = $effectiveState
-        sprint = $effectiveSprint
-        workItemType = $effectiveWorkItemType
-        fieldsApplied = @($fieldsApplied)
-        sourceSpec = $specPath
-        message = 'Dry run complete. Use without -DryRun to create the PBI.'
+    if ($hierarchyEnabled) {
+        $storyPreviews = @($parsedUserStories | ForEach-Object {
+            [PSCustomObject]@{
+                number       = $_.Number
+                title        = "Story $($_.Number) — $($_.Title)"
+                workItemType = $storyWorkItemType
+                state        = $effectiveState
+            }
+        })
+        $preview = [PSCustomObject]@{
+            success    = $true
+            dryRun     = $true
+            mode       = 'hierarchy'
+            epic       = [PSCustomObject]@{
+                title        = $effectiveTitle
+                workItemType = $epicWorkItemType
+                state        = $epicState
+            }
+            stories    = $storyPreviews
+            tags       = $effectiveTags
+            sprint     = $effectiveSprint
+            sourceSpec = $specPath
+            message    = "Dry run: will create 1 $epicWorkItemType + $($parsedUserStories.Count) $storyWorkItemType items. Use without -DryRun to create."
+        }
+    }
+    else {
+        $preview = [PSCustomObject]@{
+            success            = $true
+            dryRun             = $true
+            mode               = 'flat'
+            title              = $effectiveTitle
+            description        = $effectiveDescription
+            acceptanceCriteria = $effectiveAC
+            tags               = $effectiveTags
+            storyPoints        = $effectiveSP
+            priority           = $effectivePriority
+            state              = $effectiveState
+            sprint             = $effectiveSprint
+            workItemType       = $effectiveWorkItemType
+            fieldsApplied      = @($fieldsApplied)
+            sourceSpec         = $specPath
+            message            = 'Dry run complete. Use without -DryRun to create the PBI.'
+        }
     }
 
     if ($Json) {
@@ -333,9 +444,19 @@ if ($DryRun) {
     }
     else {
         Write-Host ''
-        Write-Host 'DRY RUN - no work item will be created' -ForegroundColor Yellow
-        Write-Host ("Title: {0}" -f $effectiveTitle)
-        Write-Host ("Fields: {0}" -f ($fieldsApplied -join ', '))
+        Write-Host 'DRY RUN - no work items will be created' -ForegroundColor Yellow
+        if ($hierarchyEnabled) {
+            Write-Host 'Mode: HIERARCHY' -ForegroundColor Cyan
+            Write-Host ("Epic ($epicWorkItemType): {0}" -f $effectiveTitle)
+            foreach ($s in $parsedUserStories) {
+                Write-Host ("  Child ($storyWorkItemType): Story $($s.Number) — $($s.Title)")
+            }
+        }
+        else {
+            Write-Host 'Mode: FLAT'
+            Write-Host ("Title: {0}" -f $effectiveTitle)
+            Write-Host ("Fields: {0}" -f ($fieldsApplied -join ', '))
+        }
         if ($specPath) {
             Write-Host ("Source spec: {0}" -f $specPath) -ForegroundColor Gray
         }
@@ -345,109 +466,253 @@ if ($DryRun) {
 }
 
 $adoDescription = if ($effectiveDescription) { ConvertTo-AdoHtml -Text $effectiveDescription } else { '' }
-$adoAC = if ($effectiveAC) { ConvertTo-AdoHtml -Text $effectiveAC } else { '' }
-
-$createParams = @{
-    Organization = [string]$config.ado.organization
-    ProjectName = [string]$config.ado.projectName
-    PatToken = $patToken
-    Title = $effectiveTitle
-    Priority = $effectivePriority
-    State = $effectiveState
-    Iteration = $effectiveSprint
-    WorkItemType = $effectiveWorkItemType
-}
-if ($adoDescription) { $createParams['Description'] = $adoDescription }
-if ($adoAC) { $createParams['AcceptanceCriteria'] = $adoAC }
-if ($effectiveTags) { $createParams['Tags'] = $effectiveTags }
-if ($null -ne $effectiveSP) { $createParams['StoryPoints'] = $effectiveSP }
-
-$created = New-AzureDevOpsPBI @createParams
-$pbiId = [int]$created.id
-$pbiTitle = [string]$created.fields.'System.Title'
-$pbiState = if ($created.fields.PSObject.Properties.Match('System.State').Count -gt 0) { [string]$created.fields.'System.State' } else { '' }
-$pbiIteration = if ($created.fields.PSObject.Properties.Match('System.IterationPath').Count -gt 0) { [string]$created.fields.'System.IterationPath' } else { '' }
-$pbiTags = if ($created.fields.PSObject.Properties.Match('System.Tags').Count -gt 0) { [string]$created.fields.'System.Tags' } else { '' }
-$pbiUrl = "https://dev.azure.com/$($config.ado.organization)/$($config.ado.projectName)/_workitems/edit/$pbiId"
-
-$createdContext = [PSCustomObject]@{
-    createdAtUtc = (Get-Date).ToUniversalTime().ToString('o')
-    source = [PSCustomObject]@{
-        organization = [string]$config.ado.organization
-        projectName = [string]$config.ado.projectName
-    }
-    spec = [PSCustomObject]@{
-        path = $specPath
-    }
-    pbi = [PSCustomObject]@{
-        id = $pbiId
-        taskId = (ConvertTo-TaskId -PBIId $pbiId)
-        title = $pbiTitle
-        state = $pbiState
-        iteration = $pbiIteration
-        tags = $pbiTags
-        storyPoints = if ($null -ne $effectiveSP) { $effectiveSP } else { $null }
-        url = $pbiUrl
-    }
-    fieldsApplied = @($fieldsApplied)
-}
+$adoAC          = if ($effectiveAC)           { ConvertTo-AdoHtml -Text $effectiveAC }           else { '' }
 
 $createdDir = Split-Path -Parent $createdContextPath
 if (-not (Test-Path $createdDir)) {
     New-Item -Path $createdDir -ItemType Directory -Force | Out-Null
 }
-$createdContext | ConvertTo-Json -Depth 10 | Set-Content -Path $createdContextPath -Encoding UTF8
 
-if ($SetAsSelected) {
-    $selectedContext = [PSCustomObject]@{
-        selectedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
-        source = [PSCustomObject]@{
+# ─── Hierarchy creation ───────────────────────────────────────────────────────
+if ($hierarchyEnabled) {
+    # 1. Create the Epic
+    $epicParams = @{
+        Organization = [string]$config.ado.organization
+        ProjectName  = [string]$config.ado.projectName
+        PatToken     = $patToken
+        Title        = $effectiveTitle
+        Priority     = $effectivePriority
+        State        = $epicState
+        Iteration    = $effectiveSprint
+        WorkItemType = $epicWorkItemType
+    }
+    if ($adoDescription) { $epicParams['Description'] = $adoDescription }
+    if ($effectiveTags)  { $epicParams['Tags']        = $effectiveTags }
+
+    $createdEpic = New-AzureDevOpsPBI @epicParams
+    $epicId      = [int]$createdEpic.id
+    $epicTitle   = [string]$createdEpic.fields.'System.Title'
+    $epicUrl     = "https://dev.azure.com/$($config.ado.organization)/$($config.ado.projectName)/_workitems/edit/$epicId"
+
+    # 2. Create one child work item per user story and link to epic
+    $childItems = [System.Collections.Generic.List[PSCustomObject]]::new()
+    foreach ($story in $parsedUserStories) {
+        $childTitle    = "Story $($story.Number) — $($story.Title)"
+        $childDescHtml = if ($story.Description)        { ConvertTo-AdoHtml -Text $story.Description }        else { '' }
+        $childAcHtml   = if ($story.AcceptanceCriteria) { ConvertTo-AdoHtml -Text $story.AcceptanceCriteria } else { '' }
+
+        $childParams = @{
+            Organization = [string]$config.ado.organization
+            ProjectName  = [string]$config.ado.projectName
+            PatToken     = $patToken
+            Title        = $childTitle
+            Priority     = $effectivePriority
+            State        = $effectiveState
+            Iteration    = $effectiveSprint
+            WorkItemType = $storyWorkItemType
+        }
+        if ($childDescHtml) { $childParams['Description']        = $childDescHtml }
+        if ($childAcHtml)   { $childParams['AcceptanceCriteria'] = $childAcHtml }
+        if ($effectiveTags) { $childParams['Tags']               = $effectiveTags }
+
+        $createdChild = New-AzureDevOpsPBI @childParams
+        $childId      = [int]$createdChild.id
+
+        Set-WorkItemParent -Organization ([string]$config.ado.organization) `
+                           -ProjectName  ([string]$config.ado.projectName)  `
+                           -PatToken     $patToken                           `
+                           -ChildId      $childId                            `
+                           -ParentId     $epicId
+
+        $childUrl = "https://dev.azure.com/$($config.ado.organization)/$($config.ado.projectName)/_workitems/edit/$childId"
+        $childItems.Add([PSCustomObject]@{
+            id          = $childId
+            taskId      = (ConvertTo-TaskId -PBIId $childId)
+            title       = $childTitle
+            storyNumber = $story.Number
+            url         = $childUrl
+        })
+    }
+
+    # 3. Persist hierarchy context
+    $hierarchyContext = [PSCustomObject]@{
+        createdAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+        mode         = 'hierarchy'
+        source       = [PSCustomObject]@{
             organization = [string]$config.ado.organization
-            projectName = [string]$config.ado.projectName
+            projectName  = [string]$config.ado.projectName
         }
-        filters = [PSCustomObject]@{
-            state = @($pbiState)
-            sprint = $pbiIteration
-            assignedTo = ''
-            searchText = ''
+        spec         = [PSCustomObject]@{ path = $specPath }
+        epic         = [PSCustomObject]@{
+            id           = $epicId
+            taskId       = (ConvertTo-TaskId -PBIId $epicId)
+            title        = $epicTitle
+            workItemType = $epicWorkItemType
+            url          = $epicUrl
         }
-        pbi = [PSCustomObject]@{
-            id = $pbiId
-            taskId = (ConvertTo-TaskId -PBIId $pbiId)
-            title = $pbiTitle
-            description = $effectiveDescription
-            acceptanceCriteria = $effectiveAC
-            state = $pbiState
-            assignedTo = ''
-            iteration = $pbiIteration
-            tags = $pbiTags
-            storyPoints = if ($null -ne $effectiveSP) { $effectiveSP } else { $null }
+        children     = @($childItems)
+    }
+    $hierarchyContext | ConvertTo-Json -Depth 10 | Set-Content -Path $createdContextPath -Encoding UTF8
+
+    if ($SetAsSelected -and $childItems.Count -gt 0) {
+        $first  = $childItems[0]
+        $selCtx = [PSCustomObject]@{
+            selectedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+            source        = [PSCustomObject]@{
+                organization = [string]$config.ado.organization
+                projectName  = [string]$config.ado.projectName
+            }
+            filters = [PSCustomObject]@{
+                state      = @($effectiveState)
+                sprint     = $effectiveSprint
+                assignedTo = ''
+                searchText = ''
+            }
+            pbi = [PSCustomObject]@{
+                id                 = $first.id
+                taskId             = $first.taskId
+                title              = $first.title
+                description        = ''
+                acceptanceCriteria = ''
+                state              = $effectiveState
+                assignedTo         = ''
+                iteration          = $effectiveSprint
+                tags               = $effectiveTags
+                storyPoints        = $null
+            }
+        }
+        $selCtx | ConvertTo-Json -Depth 10 | Set-Content -Path $selectedContextPath -Encoding UTF8
+    }
+
+    $result = [PSCustomObject]@{
+        success            = $true
+        dryRun             = $false
+        mode               = 'hierarchy'
+        epicId             = $epicId
+        epicTaskId         = (ConvertTo-TaskId -PBIId $epicId)
+        epicTitle          = $epicTitle
+        epicUrl            = $epicUrl
+        children           = @($childItems)
+        createdContextPath = $createdContextPath
+        setAsSelected      = $SetAsSelected.IsPresent
+    }
+
+    if ($Json) {
+        $result | ConvertTo-Json -Depth 10
+    }
+    else {
+        Write-Host ''
+        Write-Host ("Created Epic  AB#{0}: {1}" -f $epicId, $epicTitle) -ForegroundColor Cyan
+        Write-Host ("  URL: {0}" -f $epicUrl)
+        foreach ($c in $childItems) {
+            Write-Host ("Created Issue AB#{0}: {1}" -f $c.id, $c.title) -ForegroundColor Green
+            Write-Host ("  URL: {0}" -f $c.url)
+        }
+        Write-Host ("Context saved: {0}" -f $createdContextPath) -ForegroundColor Gray
+        if ($SetAsSelected) {
+            Write-Host ("Selected context updated (first child): {0}" -f $selectedContextPath) -ForegroundColor Gray
         }
     }
-    $selectedContext | ConvertTo-Json -Depth 10 | Set-Content -Path $selectedContextPath -Encoding UTF8
-}
-
-$result = [PSCustomObject]@{
-    success = $true
-    dryRun = $false
-    pbiId = $pbiId
-    taskId = (ConvertTo-TaskId -PBIId $pbiId)
-    title = $pbiTitle
-    url = $pbiUrl
-    fieldsApplied = @($fieldsApplied)
-    createdContextPath = $createdContextPath
-    setAsSelected = $SetAsSelected.IsPresent
-}
-
-if ($Json) {
-    $result | ConvertTo-Json -Depth 8
 }
 else {
-    Write-Host ''
-    Write-Host ("Created PBI AB#{0}: {1}" -f $pbiId, $pbiTitle) -ForegroundColor Green
-    Write-Host ("Work item URL: {0}" -f $pbiUrl) -ForegroundColor Cyan
-    Write-Host ("Context saved: {0}" -f $createdContextPath) -ForegroundColor Gray
+    # ─── Flat creation (original behavior) ────────────────────────────────────
+    $createParams = @{
+        Organization = [string]$config.ado.organization
+        ProjectName  = [string]$config.ado.projectName
+        PatToken     = $patToken
+        Title        = $effectiveTitle
+        Priority     = $effectivePriority
+        State        = $effectiveState
+        Iteration    = $effectiveSprint
+        WorkItemType = $effectiveWorkItemType
+    }
+    if ($adoDescription) { $createParams['Description']        = $adoDescription }
+    if ($adoAC)          { $createParams['AcceptanceCriteria'] = $adoAC }
+    if ($effectiveTags)  { $createParams['Tags']               = $effectiveTags }
+    if ($null -ne $effectiveSP) { $createParams['StoryPoints'] = $effectiveSP }
+
+    $created      = New-AzureDevOpsPBI @createParams
+    $pbiId        = [int]$created.id
+    $pbiTitle     = [string]$created.fields.'System.Title'
+    $pbiState     = if ($created.fields.PSObject.Properties.Match('System.State').Count -gt 0)         { [string]$created.fields.'System.State' }         else { '' }
+    $pbiIteration = if ($created.fields.PSObject.Properties.Match('System.IterationPath').Count -gt 0) { [string]$created.fields.'System.IterationPath' } else { '' }
+    $pbiTags      = if ($created.fields.PSObject.Properties.Match('System.Tags').Count -gt 0)          { [string]$created.fields.'System.Tags' }          else { '' }
+    $pbiUrl       = "https://dev.azure.com/$($config.ado.organization)/$($config.ado.projectName)/_workitems/edit/$pbiId"
+
+    $createdContext = [PSCustomObject]@{
+        createdAtUtc  = (Get-Date).ToUniversalTime().ToString('o')
+        mode          = 'flat'
+        source        = [PSCustomObject]@{
+            organization = [string]$config.ado.organization
+            projectName  = [string]$config.ado.projectName
+        }
+        spec          = [PSCustomObject]@{ path = $specPath }
+        pbi           = [PSCustomObject]@{
+            id          = $pbiId
+            taskId      = (ConvertTo-TaskId -PBIId $pbiId)
+            title       = $pbiTitle
+            state       = $pbiState
+            iteration   = $pbiIteration
+            tags        = $pbiTags
+            storyPoints = if ($null -ne $effectiveSP) { $effectiveSP } else { $null }
+            url         = $pbiUrl
+        }
+        fieldsApplied = @($fieldsApplied)
+    }
+    $createdContext | ConvertTo-Json -Depth 10 | Set-Content -Path $createdContextPath -Encoding UTF8
+
     if ($SetAsSelected) {
-        Write-Host ("Selected context updated: {0}" -f $selectedContextPath) -ForegroundColor Gray
+        $selectedContext = [PSCustomObject]@{
+            selectedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+            source        = [PSCustomObject]@{
+                organization = [string]$config.ado.organization
+                projectName  = [string]$config.ado.projectName
+            }
+            filters = [PSCustomObject]@{
+                state      = @($pbiState)
+                sprint     = $pbiIteration
+                assignedTo = ''
+                searchText = ''
+            }
+            pbi = [PSCustomObject]@{
+                id                 = $pbiId
+                taskId             = (ConvertTo-TaskId -PBIId $pbiId)
+                title              = $pbiTitle
+                description        = $effectiveDescription
+                acceptanceCriteria = $effectiveAC
+                state              = $pbiState
+                assignedTo         = ''
+                iteration          = $pbiIteration
+                tags               = $pbiTags
+                storyPoints        = if ($null -ne $effectiveSP) { $effectiveSP } else { $null }
+            }
+        }
+        $selectedContext | ConvertTo-Json -Depth 10 | Set-Content -Path $selectedContextPath -Encoding UTF8
+    }
+
+    $result = [PSCustomObject]@{
+        success            = $true
+        dryRun             = $false
+        mode               = 'flat'
+        pbiId              = $pbiId
+        taskId             = (ConvertTo-TaskId -PBIId $pbiId)
+        title              = $pbiTitle
+        url                = $pbiUrl
+        fieldsApplied      = @($fieldsApplied)
+        createdContextPath = $createdContextPath
+        setAsSelected      = $SetAsSelected.IsPresent
+    }
+
+    if ($Json) {
+        $result | ConvertTo-Json -Depth 8
+    }
+    else {
+        Write-Host ''
+        Write-Host ("Created PBI AB#{0}: {1}" -f $pbiId, $pbiTitle) -ForegroundColor Green
+        Write-Host ("Work item URL: {0}" -f $pbiUrl) -ForegroundColor Cyan
+        Write-Host ("Context saved: {0}" -f $createdContextPath) -ForegroundColor Gray
+        if ($SetAsSelected) {
+            Write-Host ("Selected context updated: {0}" -f $selectedContextPath) -ForegroundColor Gray
+        }
     }
 }

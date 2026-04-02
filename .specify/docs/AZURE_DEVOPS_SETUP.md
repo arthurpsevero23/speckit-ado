@@ -188,7 +188,7 @@ If you already have a specification draft and want to create a new item in Azure
 # Preview only
 .specify/scripts/powershell/create-pbi-for-specify.ps1 -DryRun -Json
 
-# Create a new item
+# Create a single flat work item
 .specify/scripts/powershell/create-pbi-for-specify.ps1 `
   -Title "Authentication hardening" `
   -Description "Create authentication backlog item from spec context" `
@@ -197,7 +197,43 @@ If you already have a specification draft and want to create a new item in Azure
   -Priority 2 `
   -State "To Do" `
   -Json
+
+# Create an Epic + one Issue per user story (hierarchy mode)
+.specify/scripts/powershell/create-pbi-for-specify.ps1 -CreateHierarchy -Json
 ```
+
+#### Hierarchy mode
+
+When the spec contains multiple `### User Story N — Title` sections, you can create a full work item tree instead of a single flat item.
+
+**Enable once per invocation** with the `-CreateHierarchy` flag, or **enable by default** in `init-options.json`:
+
+```json
+"creation": {
+  "workItemType": "Issue",
+  "defaultState": "To Do",
+  "hierarchy": {
+    "createHierarchy": true,
+    "epicWorkItemType": "Epic",
+    "epicState": "To Do",
+    "storyWorkItemType": "Issue"
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `createHierarchy` | `true` to always use hierarchy mode |
+| `epicWorkItemType` | Work item type for the parent (e.g. `"Epic"`) |
+| `epicState` | Initial state for the Epic |
+| `storyWorkItemType` | Work item type for each story child (e.g. `"Issue"`) |
+
+In hierarchy mode the script:
+1. Creates one **Epic** titled from the spec's `# Feature Specification:` heading
+2. Parses every `### User Story N — Title` section and creates one child work item per story, linked to the Epic via a parent relation
+3. Saves the full tree (epic + children IDs/URLs) to `.specify/context/created-pbi.json`
+
+> **Note:** Hierarchy mode requires 2 or more user stories in the spec; if fewer are found, the script falls back to flat creation automatically.
 
 This writes context to `.specify/context/created-pbi.json` and returns the created ADO URL.
 
@@ -268,6 +304,25 @@ It also posts a comment to the work item documenting the refinement event.
 ---
 
 ## Troubleshooting
+
+### Error: "Failed to create work item (HTTP 400)"
+
+**Cause:** The `defaultState` value in `init-options.json` is invalid for your project's process template.
+
+| Process template | Valid initial states |
+|-----------------|----------------------|
+| Basic | `To Do` |
+| Scrum | `New` |
+| CMMI | `Proposed` / `Active` |
+
+**Fix:** Update `ado.creation.defaultState` to a valid state for your process:
+```json
+"creation": {
+  "defaultState": "To Do"
+}
+```
+
+You can also pass `-State "To Do"` as a one-off override on the command line.
 
 ### Error: "PAT token not found in environment variable 'ADO_PAT_TOKEN'"
 

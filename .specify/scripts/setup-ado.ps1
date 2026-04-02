@@ -49,23 +49,30 @@ $patVar = $ado.patTokenEnvVar
 # Check for PAT token
 $pat = [Environment]::GetEnvironmentVariable($patVar)
 if (-not $pat) {
-    Write-Host "WARNING: PAT token not found in $patVar" -ForegroundColor Yellow
+    Write-Host "WARNING: PAT token not found in environment variable '$patVar'" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "To set up, run one of these:"
+    Write-Host "To get a token:" -ForegroundColor Cyan
+    Write-Host "  1. Go to https://dev.azure.com/$org"
+    Write-Host "  2. Click your profile icon (top right) -> Personal access tokens"
+    Write-Host "  3. Click + New Token, scope: Work Items (Read)"
+    Write-Host "  4. Copy the token and paste it below"
     Write-Host ""
-    Write-Host "PowerShell:"
-    Write-Host '  $env:ADO_PAT_TOKEN = "your-token-here"'
+    $secPat = Read-Host "Enter your ADO PAT token" -AsSecureString
+    $pat = [System.Net.NetworkCredential]::new('', $secPat).Password
+    if (-not $pat) {
+        Write-Host "ERROR: No token entered. Exiting." -ForegroundColor Red
+        exit 1
+    }
+    $saveChoice = Read-Host "Save token permanently to user environment? (Y/n)"
+    if ($saveChoice -ne 'n' -and $saveChoice -ne 'N') {
+        [Environment]::SetEnvironmentVariable($patVar, $pat, "User")
+        $env:ADO_PAT_TOKEN = $pat
+        Write-Host "OK: Token saved to user environment as '$patVar'" -ForegroundColor Green
+    } else {
+        $env:ADO_PAT_TOKEN = $pat
+        Write-Host "OK: Token set for this session only" -ForegroundColor Yellow
+    }
     Write-Host ""
-    Write-Host "Or permanently:"
-    Write-Host '  [Environment]::SetEnvironmentVariable("ADO_PAT_TOKEN", "your-token", "User")'
-    Write-Host ""
-    Write-Host "To get a token:"
-    Write-Host "  1. Go to https://dev.azure.com/YOUR-ORG"
-    Write-Host "  2. Click profile icon - Personal access tokens"
-    Write-Host "  3. New Token with scope: Work Items (Read)"
-    Write-Host "  4. Copy and set as environment variable above"
-    Write-Host ""
-    exit 0
 }
 
 Write-Host "OK: PAT token found" -ForegroundColor Green
